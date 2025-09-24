@@ -5,8 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:route_optimization/Components/GradientButton.dart';
 import 'package:route_optimization/Controllers/controllers.dart';
 import 'dart:async';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:route_optimization/Screens/homeScreen.dart';
+
+import '../Services/api.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,11 +19,17 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   bool isMobileNumberTen = false;
   bool is30secDone = false;
+  bool isOtpSent = false;
+  bool isLoading = false;
   int timerSeconds = 30;
   Timer? _timer;
+
+  String? _jwtToken;
+  String _enteredOtp = '';
+
+  final AuthService _authService = AuthService();
 
   void startTimer() {
     setState(() {
@@ -46,9 +55,139 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// Get OTP: Generate JWT and send OTP
+  Future<void> getOtp() async {
+    if (isLoading) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final contact = mobileNumberController.text.trim();
+      print('Requesting OTP for: $contact'); // Debug log
+
+      // 1. Generate JWT
+      final token = await _authService.generateJwt(contact);
+      if (token == null) {
+        _showSnackBar('Failed to generate token', Colors.red);
+        return;
+      }
+
+      print('JWT Token generated successfully'); // Debug log
+      _jwtToken = token;
+
+      // 2. Send OTP using token
+      final otpSent = await _authService.sendOtp(contact, token);
+      if (otpSent) {
+        setState(() {
+          isOtpSent = true;
+        });
+        _showSnackBar('OTP sent to WhatsApp', Colors.green);
+        startTimer();
+      } else {
+        _showSnackBar('Failed to send OTP. Please try again.', Colors.red);
+      }
+    } catch (e) {
+      print('Error in getOtp: $e'); // Debug log
+      _showSnackBar('Network error. Please check your connection.', Colors.red);
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  /// Resend OTP (only call sendOtp using existing token)
+  Future<void> resendOtp() async {
+    if (isLoading) return;
+
+    if (_jwtToken == null) {
+      _showSnackBar('Please request OTP first', Colors.orange);
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final contact = '+91${mobileNumberController.text.trim()}';
+      final otpSent = await _authService.sendOtp(contact, _jwtToken!);
+      if (otpSent) {
+        _showSnackBar('OTP resent to WhatsApp', Colors.green);
+        startTimer();
+      } else {
+        _showSnackBar('Failed to resend OTP', Colors.red);
+      }
+    } catch (e) {
+      print('Error in resendOtp: $e'); // Debug log
+      _showSnackBar('Network error. Please check your connection.', Colors.red);
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  /// Validate OTP
+  Future<void> validateOtp() async {
+    if (isLoading) return;
+
+    if (_jwtToken == null) {
+      _showSnackBar('Token missing. Please request OTP first', Colors.orange);
+      return;
+    }
+
+    if (_enteredOtp.isEmpty || _enteredOtp.length != 6) {
+      _showSnackBar('Please enter a valid 6-digit OTP', Colors.orange);
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      print('Validating OTP: $_enteredOtp'); // Debug log
+      final isValid = await _authService.validateOtp(_enteredOtp, _jwtToken!);
+
+      if (isValid) {
+        // Store login state
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+
+        _showSnackBar('Login successful!', Colors.green);
+        Navigator.pushReplacement(
+            context, CupertinoPageRoute(builder: (_) => HomeScreen()));
+      } else {
+        _showSnackBar('Invalid OTP. Please try again.', Colors.red);
+        setState(() {
+          _enteredOtp = '';
+        });
+      }
+    } catch (e) {
+      print('Error in validateOtp: $e'); // Debug log
+      _showSnackBar('Network error. Please check your connection.', Colors.red);
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -117,15 +256,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           maxLength: 10,
                           cursorColor: Colors.blue,
                           keyboardType: TextInputType.number,
+                          enabled: !isLoading,
                           onChanged: (val) {
-                            if (val.length == 10) {
-                              FocusScope.of(context).unfocus();
-                              setState(() {
-                                isMobileNumberTen = true;
-                              });
-                            } else { setState(() {
-                              isMobileNumberTen = false;
-                            }); }
+                            setState(() {
+                              isMobileNumberTen = val.length == 10;
+                              if (val.length != 10) {
+                                isOtpSent = false;
+                                _jwtToken = null;
+                                _enteredOtp = '';
+                              }
+                            });
                           },
                           decoration: InputDecoration(
                             counterStyle: TextStyle(color: Colors.grey),
@@ -140,18 +280,31 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                            suffixIcon: TextButton(
-                              onPressed: isMobileNumberTen ? () {
-                                startTimer();
-                                setState(() {
-                                  isMobileNumberTen = false;
-                                });
-                              } : null,
-                              child: Text('Get OTP  ',
-                                style: GoogleFonts.poppins(
-                                    color: isMobileNumberTen ? Colors.blue : Colors.grey,
-                                    fontWeight: FontWeight.w600
-                                ),),
+                            suffixIcon: Container(
+                              width: 100,
+                              child: isLoading
+                                  ? Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                  ),
+                                ),
+                              )
+                                  : TextButton(
+                                onPressed: isMobileNumberTen ? getOtp : null,
+                                child: Text(
+                                  isOtpSent ? 'Sent' : 'Get OTP',
+                                  style: GoogleFonts.poppins(
+                                    color: isMobileNumberTen
+                                        ? (isOtpSent ? Colors.green : Colors.blue)
+                                        : Colors.grey,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(18),
@@ -191,6 +344,20 @@ class _LoginScreenState extends State<LoginScreen> {
                             numberOfFields: 6,
                             keyboardType: TextInputType.number,
                             showCursor: false,
+                            enabled: isOtpSent && !isLoading,
+                            onCodeChanged: (code) {
+                              setState(() {
+                                _enteredOtp = code;
+                              });
+                            },
+                            onSubmit: (code) {
+                              setState(() {
+                                _enteredOtp = code;
+                              });
+                              if (code.length == 6) {
+                                validateOtp();
+                              }
+                            },
                             decoration: InputDecoration(
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(20),
@@ -200,12 +367,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             fieldWidth: 40,
                             fieldHeight: 50,
                             borderWidth: 1,
-                            enabledBorderColor: Colors.white24,
+                            enabledBorderColor: isOtpSent ? Colors.white24 : Colors.grey,
                             focusedBorderColor: Colors.white,
                             textStyle: GoogleFonts.poppins(
                               fontSize: 30,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white70,
+                              color: isOtpSent ? Colors.white70 : Colors.grey,
                             ),
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                             contentPadding: const EdgeInsets.symmetric(vertical: 4),
@@ -213,26 +380,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           Align(
                             alignment: Alignment.topRight,
                             child: TextButton(
-                                onPressed: is30secDone ? () {
-                                  startTimer();
-                                } : null,
-                                child: Text(is30secDone ? 'Resend OTP' : 'Resend OTP (${timerSeconds}s)',
+                                onPressed: (is30secDone && !isLoading && isOtpSent) ? resendOtp : null,
+                                child: Text(
+                                  is30secDone ? 'Resend OTP' : 'Resend OTP (${timerSeconds}s)',
                                   style: GoogleFonts.poppins(
-                                      color: is30secDone ? Color(0xffB3E2FF) : Colors.grey,
+                                      color: (is30secDone && isOtpSent) ? Color(0xffB3E2FF) : Colors.grey,
                                       fontWeight: FontWeight.w600
-                                  ),)),
+                                  ),
+                                )),
                           ),
                         ],
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 40),
-                        child: GradientButton(
+                          padding: const EdgeInsets.symmetric(vertical: 40),
+                          child: GradientButton(
                             text: 'Continue',
                             textColor: Colors.white,
-                            onPressed: (){
-                              Navigator.push(context, CupertinoPageRoute(builder: (_)=> HomeScreen()));
-                            }
-                        )
+                            onPressed: (isOtpSent && _enteredOtp.length == 6 && !isLoading)
+                                ? validateOtp
+                                : null,
+                          )
                       )
                     ],
                   ),

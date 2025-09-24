@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:route_optimization/Globals/fontStyle.dart';
 import 'package:route_optimization/Screens/loginScreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -45,8 +47,14 @@ class AppDrawer extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 16
                 ),),
-              onTap: (){
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_)=> LoginScreen()));
+              onTap: () async{
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('jwt_token');
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  CupertinoPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                );
               },
             )
           ],

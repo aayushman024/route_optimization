@@ -5,6 +5,7 @@ import 'package:lottie/lottie.dart';
 import 'package:route_optimization/Components/GradientButton.dart';
 import 'package:route_optimization/Components/NormalElevatedButton.dart';
 import 'package:route_optimization/Globals/fontStyle.dart';
+import 'package:route_optimization/Services/locationTracking.dart';
 
 class ModalBottomSheet extends StatefulWidget {
   const ModalBottomSheet({super.key});
@@ -66,6 +67,7 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
               ),
               CustomElevatedButton(
                 onPressed: () {
+                  //sendCurrentLocationNow();
                   setState(() {
                     showAnimation = true;
                   });

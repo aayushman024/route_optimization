@@ -2,15 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-<key>LSApplicationQueriesSchemes</key>
-<array>
-  <string>tel</string>
-  <string>telprompt</string>
-  <string>http</string>
-  <string>https</string>
-  <string>mailto</string>
-  <string>maps</string>
-</array>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>tel</string>
+        <string>telprompt</string>
+        <string>http</string>
+        <string>https</string>
+        <string>mailto</string>
+        <string>maps</string>
+    </array>
+
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
@@ -54,5 +55,18 @@
     <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
+
+    <!-- 🔑 Location Permissions -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>This app requires location access while using the app to provide route optimization.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>This app requires location access even in the background to continuously optimize routes.</string>
+
+    <!-- 🔑 Precise Location (iOS 14+) -->
+    <key>NSLocationTemporaryUsageDescriptionDictionary</key>
+    <dict>
+        <key>PreciseLocation</key>
+        <string>We need precise location for accurate route optimization.</string>
+    </dict>
 </dict>
 </plist>
