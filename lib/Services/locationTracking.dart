@@ -12,7 +12,9 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 // Import model types to check success/failure
 import 'package:flutter_foreground_task/models/service_request_result.dart';
 
-import 'package:route_optimization/Services/api.dart';
+import 'package:route_optimization/Services/auth_api.dart';
+
+import 'apiGlobal.dart';
 
 class LocationService {
   static Position? lastSentPosition;
@@ -226,7 +228,7 @@ class LocationService {
           channelName: 'Location Service',
           channelDescription: 'Tracks your location for route optimization',
           channelImportance: NotificationChannelImportance.HIGH,
-          priority: NotificationPriority.HIGH,
+          priority: NotificationPriority.LOW,
         ),
         iosNotificationOptions: IOSNotificationOptions(
           showNotification: true,
@@ -238,7 +240,7 @@ class LocationService {
           allowWakeLock: true,
           allowWifiLock: true,
           // Reduced interval for more frequent updates
-          eventAction: ForegroundTaskEventAction.repeat(30000), // 30 seconds
+          eventAction: ForegroundTaskEventAction.repeat(120000), // 60 seconds
         ),
       );
 
@@ -314,8 +316,7 @@ class LocationService {
 
       Duration timeSinceLastSent = DateTime.now().difference(lastSentTime!);
 
-      // Only send if moved more than 10 meters or 60 seconds have passed
-      if (distanceInMeters < 10 && timeSinceLastSent.inSeconds < 60) {
+      if (distanceInMeters < 200 && timeSinceLastSent.inSeconds < 120) {
         print("[DEBUG] Skipping location update - too close/recent");
         return;
       }
@@ -342,9 +343,6 @@ class LocationService {
         body: jsonEncode({
           'long': pos.longitude,
           'lat': pos.latitude,
-          'timestamp': DateTime.now().toIso8601String(),
-          'accuracy': pos.accuracy,
-          'speed': pos.speed,
         }),
       ).timeout(Duration(seconds: 30));
 
@@ -372,7 +370,7 @@ class LocationService {
 
       const LocationSettings locationSettings = LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Only update when moved 10+ meters
+        distanceFilter: 200, // Only update when moved 10+ meters
       );
 
       _locationStream = Geolocator.getPositionStream(
@@ -412,7 +410,7 @@ class LocationService {
 
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 10),
+        timeLimit: Duration(seconds: 60),
       );
 
       print("[DEBUG] Background location: ${position.latitude}, ${position.longitude}");
@@ -436,25 +434,29 @@ class LocationTaskHandler extends TaskHandler {
 
     // Start location stream when service starts
     await LocationService.startLocationStream();
-
+    final istTimestamp = timestamp.add(const Duration(hours: 5, minutes: 30));
     FlutterForegroundTask.updateService(
       notificationTitle: 'Location Tracking Active',
-      notificationText: 'Started tracking at ${timestamp.hour}:${timestamp.minute}',
+      notificationText: 'Started tracking at ${istTimestamp.hour}:${istTimestamp.minute}',
     );
   }
 
   @override
   Future<void> onRepeatEvent(DateTime timestamp) async {
-    print("[DEBUG] onRepeatEvent fired at $timestamp");
+    // Convert to IST (GMT+5:30)
+    final istTimestamp = timestamp.add(const Duration(hours: 5, minutes: 30));
+
+    print("[DEBUG] onRepeatEvent fired at $istTimestamp");
 
     // Fallback: also send location periodically in case stream fails
     await LocationService._checkAndSendLocation();
 
     FlutterForegroundTask.updateService(
       notificationTitle: 'Location Tracking Active',
-      notificationText: 'Location Services are running in background',
+      notificationText: 'Last Updated: ${istTimestamp.hour}:${istTimestamp.minute.toString().padLeft(2, '0')}',
     );
   }
+
 
   @override
   void onButtonPressed(String id) {

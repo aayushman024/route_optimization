@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 
-const String apiBaseURL = "http://192.168.1.46:5001";
+import 'apiGlobal.dart';
 
 class AuthService {
   final String baseUrl = apiBaseURL;
@@ -51,10 +51,14 @@ class AuthService {
           return null;
         }
         final token = data['token'] as String;
+        final feName = data['feName'] as String;
+        final feContactNumber = data['contactNumber'] as String;
 
         // Store token in SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', token);
+        await prefs.setString('feName', feName);
+        await prefs.setString('contactNumber', feContactNumber);
 
         return token;
       } else {

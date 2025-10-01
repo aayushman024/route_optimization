@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Screens/loginScreen.dart';
 import 'Screens/homeScreen.dart';
 
-void main() {
+Future<void> main() async {
   FlutterForegroundTask.initCommunicationPort();
   runApp(const RouteOptimizer());
 }

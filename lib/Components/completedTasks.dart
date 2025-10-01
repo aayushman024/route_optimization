@@ -2,24 +2,22 @@ import 'dart:io';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
-import '../Globals/userDetails.dart';
 import '../Services/task_api.dart';
 import '../models/task_model.dart';
 import '../DialogBoxes/modalBottomSheet.dart';
 import '../Globals/fontStyle.dart';
 import 'package:flutter_swipe_button/flutter_swipe_button.dart';
 
-class TodaysTasks extends StatefulWidget {
-  const TodaysTasks({super.key});
+class CompletedTasks extends StatefulWidget {
+  const CompletedTasks({super.key});
 
   @override
-  State<TodaysTasks> createState() => _TodaysTasksState();
+  State<CompletedTasks> createState() => _CompletedTasksState();
 }
 
-class _TodaysTasksState extends State<TodaysTasks> {
+class _CompletedTasksState extends State<CompletedTasks> {
   late Future<List<TaskModel>> futureTasks;
 
   @override
@@ -132,7 +130,7 @@ class _TodaysTasksState extends State<TodaysTasks> {
               Container(
                 width: double.infinity,
                 padding:
-                const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Colors.blue.shade700, Colors.blue.shade400],
@@ -141,7 +139,14 @@ class _TodaysTasksState extends State<TodaysTasks> {
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child:
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person, color: Colors.blue),
+                    ),
+                    const SizedBox(width: 12),
                     RichText(
                       text: TextSpan(
                         style:
@@ -149,13 +154,15 @@ class _TodaysTasksState extends State<TodaysTasks> {
                         children: [
                           const TextSpan(text: 'Welcome, '),
                           TextSpan(
-                            text: name,
+                            text: 'Aayushman',
                             style: AppText.bold(
                                 fontSize: 18, color: Colors.white),
                           ),
                         ],
                       ),
                     ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 30),
@@ -239,7 +246,6 @@ class _TodaysTasksState extends State<TodaysTasks> {
                 ),
               ),
               Container(
-                margin: EdgeInsetsGeometry.only(left: 10),
                 padding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
@@ -334,52 +340,6 @@ class _TodaysTasksState extends State<TodaysTasks> {
           // Swipe + Call
           Row(
             children: [
-              Expanded(
-                flex: 3,
-                child: SwipeButton.expand(
-                  thumb: const CircleAvatar(
-                    backgroundColor: Colors.green,
-                    child: Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: Colors.white,
-                    ),
-                  ),
-                  activeThumbColor: Colors.green,
-                  activeTrackColor: Colors.green.shade100,
-                  inactiveThumbColor: Colors.green.shade50,
-                  inactiveTrackColor: Colors.green.shade100,
-                  elevationThumb: 10,
-                  height: 50,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Text(
-                    ' Mark as Completed',
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xff2E7D32),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onSwipe: () async {
-                    final result = await showModalBottomSheet<bool>(
-                      context: context,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(20)),
-                      ),
-                      backgroundColor: const Color(0xffF0F8FF),
-                      builder: (context) {
-                        return const ModalBottomSheet();
-                      },
-                    );
-                    if (result == true) {
-                      print("Task marked as completed");
-                    } else {
-                      print("Task not completed");
-                    }
-                  },
-                ),
-              ),
               const SizedBox(width: 16),
               Expanded(
                 flex: 1,

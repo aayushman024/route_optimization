@@ -1,8 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http;
 import 'package:route_optimization/Globals/fontStyle.dart';
+import 'package:route_optimization/Services/task_api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../Services/apiGlobal.dart';
+import '../Services/auth_api.dart';
 
 class FAB extends StatefulWidget {
   const FAB({super.key});
@@ -12,11 +19,63 @@ class FAB extends StatefulWidget {
 }
 
 class _FABState extends State<FAB> {
+  List<Map<String, String>> _clients = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadClients();
+  }
+
+  Future<void> _loadClients() async {
+    final tasks = await TaskApi.fetchTasks();
+    setState(() {
+      _clients = tasks
+          .map((task) => {
+        "id": task.clientId,
+        "name": "Task - ${task.order}, ${task.clientName}"
+      })
+          .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.large(
+      onPressed: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          backgroundColor: const Color(0xffF0F8FF),
+          builder: (context) => CommentBottomSheet(clients: _clients),
+        );
+      },
+      backgroundColor: const Color(0xff292929),
+      tooltip: 'Add Comment',
+      child: const Icon(Icons.add, color: Colors.white, size: 60),
+    );
+  }
+}
+
+class CommentBottomSheet extends StatefulWidget {
+  final List<Map<String, String>> clients;
+
+  const CommentBottomSheet({super.key, required this.clients});
+
+  @override
+  State<CommentBottomSheet> createState() => _CommentBottomSheetState();
+}
+
+class _CommentBottomSheetState extends State<CommentBottomSheet> {
   String _currentAddress = "Fetching location...";
   bool _isLoadingLocation = true;
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
-  String? _selectedClient;
+  String? _selectedClientId;
+  Position? _currentPosition;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -24,6 +83,7 @@ class _FABState extends State<FAB> {
   void initState() {
     super.initState();
     _locationController.text = _currentAddress;
+    _getCurrentPosition();
   }
 
   Future<bool> _handleLocationPermission() async {
@@ -81,6 +141,7 @@ class _FABState extends State<FAB> {
         timeLimit: const Duration(seconds: 10),
       );
 
+      _currentPosition = position;
       await _getAddressFromLatLng(position);
     } catch (e) {
       setState(() {
@@ -111,23 +172,12 @@ class _FABState extends State<FAB> {
         if (place.subLocality != null && place.subLocality!.isNotEmpty) {
           addressComponents.add(place.subLocality!);
         }
-        if (place.thoroughfare != null && place.thoroughfare!.isNotEmpty) {
-          addressComponents.add(place.thoroughfare!);
-        }
-        if (place.subThoroughfare != null && place.subThoroughfare!.isNotEmpty) {
-          addressComponents.add(place.subThoroughfare!);
-        }
         if (place.locality != null && place.locality!.isNotEmpty) {
           addressComponents.add(place.locality!);
         }
-        if (place.subAdministrativeArea != null && place.subAdministrativeArea!.isNotEmpty) {
-          addressComponents.add(place.subAdministrativeArea!);
-        }
-        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) {
+        if (place.administrativeArea != null &&
+            place.administrativeArea!.isNotEmpty) {
           addressComponents.add(place.administrativeArea!);
-        }
-        if (place.postalCode != null && place.postalCode!.isNotEmpty) {
-          addressComponents.add(place.postalCode!);
         }
         if (place.country != null && place.country!.isNotEmpty) {
           addressComponents.add(place.country!);
@@ -161,28 +211,65 @@ class _FABState extends State<FAB> {
     }
   }
 
-  void _resetFields() {
-    setState(() {
-      _locationController.clear();
-      _commentController.clear();
-      _selectedClient = null;
-      _currentAddress = "Fetching location...";
-      _isLoadingLocation = false;
-    });
-  }
+  Future<void> _submitForm(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
 
-  void _submitForm(BuildContext context) {
     if (_formKey.currentState!.validate()) {
-      Navigator.pop(context);
-      _resetFields();
+      if (_currentPosition == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Location not available")),
+        );
+        return;
+      }
+
+      final payload = {
+        "clientId": _selectedClientId,
+        "remarksByFE": _commentController.text.trim(),
+        "markCommentLocation": {
+          "coordinates": [
+            _currentPosition!.longitude,
+            _currentPosition!.latitude
+          ]
+        }
+      };
+
+      try {
+        final response = await http.post(
+          Uri.parse("$apiBaseURL/api/route-plan/add-remarks"),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(payload),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Comment submitted successfully"),
+            backgroundColor: Colors.green,),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed: ${response.body}")),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${e.toString()}")),
+        );
+      }
     }
   }
 
-  Widget _buildBottomSheetContent(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+      EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -192,7 +279,7 @@ class _FABState extends State<FAB> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
+                // Location
                 Row(
                   children: [
                     Text("Your Location", style: AppText.normal(fontSize: 16)),
@@ -215,7 +302,8 @@ class _FABState extends State<FAB> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                          valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.grey),
                         ),
                       ),
                     )
@@ -228,22 +316,9 @@ class _FABState extends State<FAB> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        "Location refreshes automatically when this screen opens",
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 24),
 
-                // --- Select Client ---
+                // Select Client
                 Row(
                   children: [
                     Text("Select Client", style: AppText.normal(fontSize: 16)),
@@ -253,35 +328,33 @@ class _FABState extends State<FAB> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _selectedClient,
+                  value: _selectedClientId,
                   decoration: InputDecoration(
                     hintText: 'Client Name',
                     filled: true,
                     fillColor: Colors.white,
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.blue, width: 2),
-                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   dropdownColor: const Color(0xffF0F8FF),
-                  items: const [
-                    DropdownMenuItem(value: "Client A", child: Text("Client A")),
-                    DropdownMenuItem(value: "Client B", child: Text("Client B")),
-                    DropdownMenuItem(value: "Client C", child: Text("Client C")),
-                  ],
+                  items: widget.clients
+                      .map((client) => DropdownMenuItem(
+                    value: client["id"],
+                    child: Text(client["name"] ?? ""),
+                  ))
+                      .toList(),
                   onChanged: (value) {
                     setState(() {
-                      _selectedClient = value;
+                      _selectedClientId = value;
                     });
                   },
-                  validator: (value) => value == null ? "Please select a client" : null,
+                  validator: (value) =>
+                  value == null ? "Please select a client" : null,
                 ),
                 const SizedBox(height: 24),
 
-                // --- Add Comment ---
+                // Add Comment
                 Row(
                   children: [
                     Text("Add Comment", style: AppText.normal(fontSize: 16)),
@@ -293,27 +366,21 @@ class _FABState extends State<FAB> {
                 TextFormField(
                   controller: _commentController,
                   maxLines: 6,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
+                  validator: (value) => value == null || value.isEmpty
+                      ? "Please enter a comment"
+                      : null,
                   decoration: InputDecoration(
                     hintText: "Enter your comment here...",
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.blue, width: 1),
                       borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.blue, width: 2),
                     ),
                   ),
-                  validator: (value) =>
-                  value == null || value.trim().isEmpty ? "Please enter a comment" : null,
                 ),
                 const SizedBox(height: 24),
 
-                // --- Submit Button ---
+                // Submit
                 SizedBox(
                   width: screenWidth,
                   child: ElevatedButton(
@@ -328,41 +395,17 @@ class _FABState extends State<FAB> {
                     child: const Text(
                       "Submit",
                       style: TextStyle(
-                          color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FloatingActionButton.large(
-      onPressed: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          backgroundColor: const Color(0xffF0F8FF),
-          builder: (context) {
-            Future.microtask(() => _getCurrentPosition());
-            return _buildBottomSheetContent(context);
-          },
-        ).whenComplete(() {
-          _resetFields(); // reset when modal closes
-        });
-      },
-      backgroundColor: const Color(0xff292929),
-      tooltip: 'Add Comment',
-      child: const Icon(Icons.add, color: Colors.white, size: 60),
     );
   }
 
