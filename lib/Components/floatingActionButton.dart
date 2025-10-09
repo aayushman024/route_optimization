@@ -166,9 +166,9 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
         if (place.name != null && place.name!.isNotEmpty) {
           addressComponents.add(place.name!);
         }
-        if (place.street != null && place.street!.isNotEmpty) {
-          addressComponents.add(place.street!);
-        }
+        // if (place.street != null && place.street!.isNotEmpty) {
+        //   addressComponents.add(place.street!);
+        // }
         if (place.subLocality != null && place.subLocality!.isNotEmpty) {
           addressComponents.add(place.subLocality!);
         }
@@ -279,6 +279,23 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
+                //Disclaimer
+                Container(
+                  width: screenWidth,
+                  padding: EdgeInsetsGeometry.symmetric(vertical: 10, horizontal: 12),
+                  margin: EdgeInsetsGeometry.directional(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    border: Border.all(color: Colors.orange),
+                    borderRadius: BorderRadius.circular(15)
+                  ),
+                  child: Text('Adding a comment for any task/client will mark it as "Pending".',
+                  style: AppText.bold(
+                    color: Colors.orange
+                  ),),
+                ),
+
                 // Location
                 Row(
                   children: [

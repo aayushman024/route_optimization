@@ -227,8 +227,8 @@ class LocationService {
           channelId: 'location_service_channel',
           channelName: 'Location Service',
           channelDescription: 'Tracks your location for route optimization',
-          channelImportance: NotificationChannelImportance.HIGH,
-          priority: NotificationPriority.LOW,
+          channelImportance: NotificationChannelImportance.MIN,
+          priority: NotificationPriority.MIN,
         ),
         iosNotificationOptions: IOSNotificationOptions(
           showNotification: true,
@@ -290,8 +290,10 @@ class LocationService {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 15),
+        locationSettings: AndroidSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 15),
+        ),
       );
 
       print("[DEBUG] Current position: Lat=${position.latitude}, Long=${position.longitude}");
@@ -316,7 +318,7 @@ class LocationService {
 
       Duration timeSinceLastSent = DateTime.now().difference(lastSentTime!);
 
-      if (distanceInMeters < 200 && timeSinceLastSent.inSeconds < 120) {
+      if (distanceInMeters < 250 && timeSinceLastSent.inSeconds < 600) {
         print("[DEBUG] Skipping location update - too close/recent");
         return;
       }
@@ -369,8 +371,8 @@ class LocationService {
       _locationStream?.cancel(); // Cancel existing stream
 
       const LocationSettings locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 200, // Only update when moved 10+ meters
+        accuracy: LocationAccuracy.medium,
+        distanceFilter: 250, // Only update when moved 10+ meters
       );
 
       _locationStream = Geolocator.getPositionStream(

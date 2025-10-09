@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../Services/task_api.dart';
-import '../models/task_model.dart';
+import '../Models/task_model.dart';
 import '../DialogBoxes/modalBottomSheet.dart';
 import '../Globals/fontStyle.dart';
 import 'package:flutter_swipe_button/flutter_swipe_button.dart';
@@ -23,7 +23,7 @@ class _PendingTasksState extends State<PendingTasks> {
   @override
   void initState() {
     super.initState();
-    futureTasks = TaskApi.fetchTasks();
+    futureTasks = TaskApi.fetchTasks() as Future<List<TaskModel>>;
   }
 
   Future<void> launchDialer(String phoneNumber) async {
@@ -98,7 +98,7 @@ class _PendingTasksState extends State<PendingTasks> {
                       size: 60, color: Colors.blue.shade600),
                   const SizedBox(height: 16),
                   Text(
-                    "No tasks assigned for today",
+                    "No Pending Tasks",
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -107,79 +107,28 @@ class _PendingTasksState extends State<PendingTasks> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    "Check back later for updates.",
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.black54,
-                    ),
-                  ),
                 ],
               ),
             ),
           );
         }
 
-        final tasks = snapshot.data!;
+        final tasks =
+        snapshot.data!.where((task) => task.status.toLowerCase() == "pending").toList();
+       // final tasks = snapshot.data!;
 
         return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Container(
-                width: double.infinity,
-                padding:
-                const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue.shade700, Colors.blue.shade400],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.person, color: Colors.blue),
-                    ),
-                    const SizedBox(width: 12),
-                    RichText(
-                      text: TextSpan(
-                        style:
-                        AppText.normal(fontSize: 18, color: Colors.white),
-                        children: [
-                          const TextSpan(text: 'Welcome, '),
-                          TextSpan(
-                            text: 'Aayushman',
-                            style: AppText.bold(
-                                fontSize: 18, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 30),
-
-              Row(
-                children: [
-                  Text(" Today's Tasks", style: AppText.bold(fontSize: 20)),
-                  const SizedBox(width: 15),
-                  Expanded(
-                      child: Container(height: 1, color: Colors.black26)),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Task list
-              ...tasks.map((task) => _buildTaskItem(task)).toList(),
-            ],
+                // Task list
+                ...tasks.map((task) => _buildTaskItem(task)).toList(),
+              ],
+            ),
           ),
         );
       },
@@ -246,6 +195,7 @@ class _PendingTasksState extends State<PendingTasks> {
                 ),
               ),
               Container(
+                margin: EdgeInsetsGeometry.only(left: 10),
                 padding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
@@ -270,11 +220,19 @@ class _PendingTasksState extends State<PendingTasks> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xff1976D2).withOpacity(0.2),
-              ),
+                color: Color(0xffF0F8FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xff1976D2).withOpacity(0.2),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.blue.shade50,
+                      spreadRadius: 1,
+                      blurRadius: 10,
+                      offset: Offset(0, 3)
+                  )
+                ]
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +256,7 @@ class _PendingTasksState extends State<PendingTasks> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  task.clientAddress,
+                  task.visitingAddress,
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
@@ -309,7 +267,7 @@ class _PendingTasksState extends State<PendingTasks> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () => launchMaps(task.locationUrl),
+                    onPressed: () => launchMaps(task.locationString),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: Colors.blue.shade600, width: 1.5),
                       shape: RoundedRectangleBorder(
@@ -340,11 +298,57 @@ class _PendingTasksState extends State<PendingTasks> {
           // Swipe + Call
           Row(
             children: [
+              Expanded(
+                flex: 3,
+                child: SwipeButton.expand(
+                  thumb: const CircleAvatar(
+                    backgroundColor: Colors.green,
+                    child: Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+                  activeThumbColor: Colors.green,
+                  activeTrackColor: Colors.green.shade100,
+                  inactiveThumbColor: Colors.green.shade50,
+                  inactiveTrackColor: Colors.green.shade100,
+                  elevationThumb: 10,
+                  height: 50,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Text(
+                    '      Mark as Completed',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xff2E7D32),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onSwipe: () async {
+                    final result = await showModalBottomSheet<bool>(
+                      context: context,
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      backgroundColor: const Color(0xffF0F8FF),
+                      builder: (context) {
+                        return const ModalBottomSheet();
+                      },
+                    );
+                    if (result == true) {
+                      print("Task marked as completed");
+                    } else {
+                      print("Task not completed");
+                    }
+                  },
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 flex: 1,
                 child: OutlinedButton(
-                  onPressed: () => launchDialer(task.clientContactNumber),
+                  onPressed: () => launchDialer(task.clientContact),
                   style: OutlinedButton.styleFrom(
                     backgroundColor: Colors.green.shade50,
                     side:

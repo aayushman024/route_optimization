@@ -22,7 +22,11 @@ class RouteOptimizer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(textTheme: GoogleFonts.poppinsTextTheme()),
+      theme: ThemeData(
+        progressIndicatorTheme: ProgressIndicatorThemeData(
+            color: Colors.blue,
+        ),
+            textTheme: GoogleFonts.poppinsTextTheme()),
       debugShowCheckedModeBanner: false,
       home: FutureBuilder<Widget>(
         future: _getInitialScreen(),

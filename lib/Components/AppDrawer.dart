@@ -69,20 +69,20 @@ class AppDrawer extends StatelessWidget {
                 //   title: "View Comments",
                 //   onTap: () {},
                 // ),
-                _buildDrawerItem(
-                  icon: Icons.check_circle,
-                  title: "Completed Tasks",
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, CupertinoPageRoute(builder: (_)=> CompletedTasks()));
-                  },
-                ),
+                // _buildDrawerItem(
+                //   icon: Icons.check_circle,
+                //   title: "Completed Tasks",
+                //   onTap: () {
+                //     Navigator.pop(context);
+                //     Navigator.push(context, CupertinoPageRoute(builder: (_)=> CompletedTasks()));
+                //   },
+                // ),
                 _buildDrawerItem(
                   icon: Icons.pending_actions_rounded,
                   title: "Pending Tasks",
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, CupertinoPageRoute(builder: (_)=> PendingTasks()));
+                    Navigator.push(context, CupertinoPageRoute(builder: (_)=> PendingTasksScreen()));
                   },
                 ),
                 const Divider(color: Colors.white24, thickness: 0.5, indent: 16, endIndent: 16),

@@ -4,20 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+
+import '../Models/task_model.dart';
 import '../Services/task_api.dart';
-import '../models/task_model.dart';
 import '../DialogBoxes/modalBottomSheet.dart';
 import '../Globals/fontStyle.dart';
 import 'package:flutter_swipe_button/flutter_swipe_button.dart';
 
-class CompletedTasks extends StatefulWidget {
-  const CompletedTasks({super.key});
+class CompletedTasksContainer extends StatefulWidget {
+  const CompletedTasksContainer({super.key});
 
   @override
-  State<CompletedTasks> createState() => _CompletedTasksState();
+  State<CompletedTasksContainer> createState() => _CompletedTasksContainerState();
 }
 
-class _CompletedTasksState extends State<CompletedTasks> {
+class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
   late Future<List<TaskModel>> futureTasks;
 
   @override
@@ -71,7 +72,6 @@ class _CompletedTasksState extends State<CompletedTasks> {
         } else if (snapshot.hasError) {
           return Center(child: Text("Error: ${snapshot.error}"));
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          // Empty state container
           return Center(
             child: Container(
               margin: const EdgeInsets.all(20),
@@ -98,7 +98,7 @@ class _CompletedTasksState extends State<CompletedTasks> {
                       size: 60, color: Colors.blue.shade600),
                   const SizedBox(height: 16),
                   Text(
-                    "No tasks assigned for today",
+                    "No Completed Tasks",
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -106,13 +106,50 @@ class _CompletedTasksState extends State<CompletedTasks> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 6),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Filter only completed tasks
+        final completedTasks =
+        snapshot.data!.where((task) => task.isCompleted == true).toList();
+
+        if (completedTasks.isEmpty) {
+          return Center(
+            child: Container(
+              margin: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade100, Colors.blue.shade50],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.15),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  )
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.assignment_turned_in_outlined,
+                      size: 60, color: Colors.blue.shade600),
+                  const SizedBox(height: 16),
                   Text(
-                    "Check back later for updates.",
+                    "You have not completed any task today yet",
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.black54,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -120,66 +157,15 @@ class _CompletedTasksState extends State<CompletedTasks> {
           );
         }
 
-        final tasks = snapshot.data!;
-
         return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Container(
-                width: double.infinity,
-                padding:
-                const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue.shade700, Colors.blue.shade400],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.person, color: Colors.blue),
-                    ),
-                    const SizedBox(width: 12),
-                    RichText(
-                      text: TextSpan(
-                        style:
-                        AppText.normal(fontSize: 18, color: Colors.white),
-                        children: [
-                          const TextSpan(text: 'Welcome, '),
-                          TextSpan(
-                            text: 'Aayushman',
-                            style: AppText.bold(
-                                fontSize: 18, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              Row(
-                children: [
-                  Text(" Today's Tasks", style: AppText.bold(fontSize: 20)),
-                  const SizedBox(width: 15),
-                  Expanded(
-                      child: Container(height: 1, color: Colors.black26)),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Task list
-              ...tasks.map((task) => _buildTaskItem(task)).toList(),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...completedTasks.map((task) => _buildTaskItem(task)).toList(),
+              ],
+            ),
           ),
         );
       },
@@ -200,7 +186,7 @@ class _CompletedTasksState extends State<CompletedTasks> {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: Colors.blue.shade100, width: 1),
+        border: Border.all(color: Colors.green.shade600, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,22 +231,6 @@ class _CompletedTasksState extends State<CompletedTasks> {
                   ],
                 ),
               ),
-              Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xff1976D2),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  formatTimeRange(task.availabilityStart, task.availabilityEnd),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
             ],
           ),
 
@@ -298,39 +268,14 @@ class _CompletedTasksState extends State<CompletedTasks> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  task.clientAddress,
+                  task.visitingAddress,
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => launchMaps(task.locationUrl),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.blue.shade600, width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    icon: const Icon(
-                      Icons.navigation_rounded,
-                      color: Color(0xff1976D2),
-                    ),
-                    label: Text(
-                      "Navigate",
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xff1976D2),
-                      ),
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 10),
               ],
             ),
           ),
@@ -340,11 +285,36 @@ class _CompletedTasksState extends State<CompletedTasks> {
           // Swipe + Call
           Row(
             children: [
+              Expanded(
+                flex: 1,
+                child: OutlinedButton.icon(
+                  onPressed: () => launchMaps(task.locationString),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.blue.shade600, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  icon: const Icon(
+                    Icons.navigation_rounded,
+                    color: Color(0xff1976D2),
+                  ),
+                  label: Text(
+                    "Navigate",
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xff1976D2),
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 flex: 1,
-                child: OutlinedButton(
-                  onPressed: () => launchDialer(task.clientContactNumber),
+                child: OutlinedButton.icon(
+                  onPressed: () => launchDialer(task.clientContact),
                   style: OutlinedButton.styleFrom(
                     backgroundColor: Colors.green.shade50,
                     side:
@@ -354,7 +324,11 @@ class _CompletedTasksState extends State<CompletedTasks> {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Icon(
+                  label: Text('Call Client',
+                  style: AppText.bold(
+                    color: Color(0xff2E7D32)
+                  ),),
+                  icon: const Icon(
                     Icons.call_rounded,
                     color: Color(0xff2E7D32),
                     size: 22,
