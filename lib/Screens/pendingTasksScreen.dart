@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:route_optimization/Components/pendingTasks.dart';
 import 'package:route_optimization/Components/todaysTasks.dart';
 import 'package:route_optimization/Globals/fontStyle.dart';
 
-class PendingTasks extends StatefulWidget {
-  const PendingTasks({super.key});
+class PendingTasksScreen extends StatefulWidget {
+  const PendingTasksScreen({super.key});
 
   @override
-  State<PendingTasks> createState() => _PendingTasksState();
+  State<PendingTasksScreen> createState() => _PendingTasksScreenState();
 }
 
-class _PendingTasksState extends State<PendingTasks> {
+class _PendingTasksScreenState extends State<PendingTasksScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,7 +25,7 @@ class _PendingTasksState extends State<PendingTasks> {
         backgroundColor: const Color(0xff2E2F2E),
       ),
       body: SingleChildScrollView(
-        child: TodaysTasks(),
+        child: PendingTasks(),
       ),
     );
   }

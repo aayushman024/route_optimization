@@ -166,8 +166,8 @@ class HomeController {
 
       _positionStream = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
+          accuracy: LocationAccuracy.medium,
+          distanceFilter: 250,
         ),
       ).listen((Position position) {
         LatLng newPos = LatLng(position.latitude, position.longitude);
@@ -220,14 +220,14 @@ class HomeController {
       final newMarkers = <Marker>{};
 
       for (var client in clients) {
-        final icon = await _createNumberedMarkerIcon(client.order);
+        final icon = await _createNumberedMarkerIcon(client.priority);
         newMarkers.add(
           Marker(
             markerId: MarkerId(client.clientId),
             position: LatLng(client.latitude, client.longitude),
             infoWindow: InfoWindow(
               title: client.clientName,
-              snippet: 'Order: ${client.order}',
+              snippet: 'Order: ${client.priority}',
             ),
             icon: icon,
           ),
@@ -310,7 +310,7 @@ class HomeController {
           polylineId: const PolylineId("route"),
           points: decodePolyline(route['overview_polyline']['points']),
           color: const Color(0xff2361fc),
-          width: 5,
+          width: 3,
         );
 
         List<Map<String, String>> legsList = [];

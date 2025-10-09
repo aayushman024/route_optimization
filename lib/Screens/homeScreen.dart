@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:lottie/lottie.dart' hide Marker;
 import 'package:route_optimization/Components/floatingActionButton.dart';
 import 'package:route_optimization/Components/taskSummary.dart';
+import 'package:route_optimization/Services/task_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Components/AppDrawer.dart';
 import '../Components/map_view_tab.dart';
@@ -64,6 +65,16 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
+  Future<void> _refreshTasks() async {
+    print("[DEBUG] Pull-to-refresh triggered...");
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => HomeScreen(),
+      ),
+          (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -108,6 +119,11 @@ class _HomeScreenState extends State<HomeScreen>
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: const Color(0xff2E2F2E),
         actions: [
+          IconButton(
+              onPressed: _refreshTasks,
+              icon: Icon(Icons.refresh_rounded, color: Colors.white,)
+          ),
+          const SizedBox(width: 10,),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -146,8 +162,8 @@ class _HomeScreenState extends State<HomeScreen>
             color: const Color(0xff2E2F2E),
             child: TabBar(
               controller: _tabController,
-              indicatorColor: Colors.white,
-              indicatorWeight: 3,
+              indicatorColor: Color(0xffF0F8FF),
+              indicatorWeight: 5,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white60,
               labelStyle: GoogleFonts.poppins(
@@ -174,10 +190,7 @@ class _HomeScreenState extends State<HomeScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
-            child: const TodaysTasks(),
-          ),
+          const TodaysTasks(),
           KeepAliveWrapper(child: MapViewTab(controller: _controller)),
         ],
       ),

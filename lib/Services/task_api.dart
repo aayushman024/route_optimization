@@ -2,11 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:route_optimization/Services/auth_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/task_model.dart';
+import '../Models/task_model.dart';
 import 'apiGlobal.dart';
 
 class TaskApi {
   static const String baseUrl = "$apiBaseURL/api/route-plan/get-tasks";
+  static bool isTaskEmpty = false;
 
   static Future<List<TaskModel>> fetchTasks() async {
     final prefs = await SharedPreferences.getInstance();
@@ -30,6 +31,7 @@ class TaskApi {
 
       return tasks;
     } else if (response.statusCode == 404) {
+      isTaskEmpty = true;
       return [];
     } else {
       throw Exception("Failed to load tasks");

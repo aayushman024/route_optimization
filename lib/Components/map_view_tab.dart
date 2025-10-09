@@ -151,7 +151,7 @@ class MapViewTab extends StatelessWidget {
         ...controller.routeLegs.asMap().entries.map((entry) {
           return _buildRouteLegItem(entry.key, entry.value);
         }).toList(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 60),
       ],
     );
   }

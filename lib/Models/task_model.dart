@@ -1,89 +1,81 @@
 class TaskModel {
-  final String id;
-  final String feName;
-  final String feEmpId;
+  final String taskId;
   final String clientId;
   final String clientName;
-  final String clientAddress;
-  final String clientContactNumber;
+  final String clientContact;
+  final String visitingAddress;
   final DateTime availabilityStart;
   final DateTime availabilityEnd;
+  final int priority;
   final bool isCompleted;
   final bool onHold;
-  final String locationUrl;
-  final String purposeOfVisit;
-  final int priority;
-  final DateTime actualVisitStart;
-  final DateTime actualVisitEnd;
   final int order;
-  final String taskStatus;
+  final String status;
+  final String feId;
+  final String feName;
+  final String purposeOfVisit;
+  final String locationString;
 
   TaskModel({
-    required this.id,
-    required this.feName,
-    required this.feEmpId,
+    required this.taskId,
     required this.clientId,
     required this.clientName,
-    required this.clientAddress,
-    required this.clientContactNumber,
+    required this.clientContact,
+    required this.visitingAddress,
     required this.availabilityStart,
     required this.availabilityEnd,
+    required this.priority,
     required this.isCompleted,
     required this.onHold,
-    required this.locationUrl,
-    required this.purposeOfVisit,
-    required this.priority,
-    required this.actualVisitStart,
-    required this.actualVisitEnd,
     required this.order,
-    required this.taskStatus,
+    required this.status,
+    required this.feId,
+    required this.feName,
+    required this.purposeOfVisit,
+    required this.locationString,
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
-      id: json['_id'] ?? '',
-      feName: json['feName'] ?? '',
-      feEmpId: json['feEmpId'] ?? '',
+      taskId: json['visitId'] ?? '',
       clientId: json['clientId'] ?? '',
       clientName: json['clientName'] ?? '',
-      clientAddress: json['clientAddress'] ?? '',
-      clientContactNumber: json['clientContactNumber'] ?? '',
-      availabilityStart: DateTime.parse(json['clientAvailability']['start']),
-      availabilityEnd: DateTime.parse(json['clientAvailability']['end']),
+      clientContact: json['clientContact'] ?? '',
+      visitingAddress: json['visitingAddress'] ?? '',
+      availabilityStart: DateTime.parse(json['availability']['start']),
+      availabilityEnd: DateTime.parse(json['availability']['end']),
+      priority: json['priority'] ?? 0,
       isCompleted: json['isCompleted'] ?? false,
       onHold: json['onHold'] ?? false,
-      locationUrl: json['locationUrl'] ?? '',
-      purposeOfVisit: json['purposeOfVisit'] ?? '',
-      priority: json['priority'] ?? 0,
-      actualVisitStart: DateTime.parse(json['actualVisitStart']),
-      actualVisitEnd: DateTime.parse(json['actualVisitEnd']),
       order: json['order'] ?? 0,
-      taskStatus: json['taskStatus'] ?? '',
+      status: json['status'] ?? '',
+      feId: json['feId'] ?? '',
+      feName: json['feName'] ?? '',
+      purposeOfVisit: json['purposeOfVisit'] ?? '',
+      locationString: json['locationString'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      '_id': id,
-      'feName': feName,
-      'feEmpId': feEmpId,
+      'visitId': taskId,
       'clientId': clientId,
       'clientName': clientName,
-      'clientAddress': clientAddress,
-      'clientContactNumber': clientContactNumber,
-      'clientAvailability': {
+      'clientContact': clientContact,
+      'visitingAddress': visitingAddress,
+      'availability': {
         'start': availabilityStart.toIso8601String(),
         'end': availabilityEnd.toIso8601String(),
       },
+      'priority': priority,
       'isCompleted': isCompleted,
       'onHold': onHold,
-      'locationUrl': locationUrl,
-      'purposeOfVisit': purposeOfVisit,
-      'priority': priority,
-      'actualVisitStart': actualVisitStart.toIso8601String(),
-      'actualVisitEnd': actualVisitEnd.toIso8601String(),
       'order': order,
-      'taskStatus': taskStatus,
+      'status': status,
+      'feId': feId,
+      'feName': feName,
+      'purposeOfVisit': purposeOfVisit,
+      'locationString': locationString,
     };
   }
 }
