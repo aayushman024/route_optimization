@@ -20,8 +20,8 @@ class LocationService {
   static Position? lastSentPosition;
   static DateTime? lastSentTime;
   static StreamSubscription<Position>? _locationStream;
-  static const int POLLING_INTERVAL_SEC = 600; //10 mins
-  static const double POLLING_DISTANCE_M = 250;  // Distance in meters (e.g., 250 m)
+  static const int POLLING_INTERVAL_SEC = 600;
+  static const double POLLING_DISTANCE_M = 250;
 
 
   // Request all necessary permissions

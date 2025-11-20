@@ -12,6 +12,7 @@ class MapViewTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Assuming the Scaffold background is dark, like in homeScreen.dart
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Padding(
@@ -30,16 +31,10 @@ class MapViewTab extends StatelessWidget {
 
   Widget _buildMapContainer() {
     return Container(
-      height: 400,
+      height: 500,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: Colors.grey[800]!, width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -73,6 +68,7 @@ class MapViewTab extends StatelessWidget {
               child: FloatingActionButton(
                 mini: true,
                 onPressed: controller.refreshMapSafely,
+                // DARK MODE CHANGE: Consistent dark FAB
                 backgroundColor: Colors.black,
                 child: const Icon(
                   Icons.refresh,
@@ -96,35 +92,38 @@ class MapViewTab extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             fontSize: 20,
-            color: Colors.blueGrey[800],
+            // DARK MODE CHANGE: Light text
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
+            // DARK MODE CHANGE: Nested dark grey
+            color: const Color(0xFF2C2C2C),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
+            // DARK MODE CHANGE: Use themed border
+            border: Border.all(
+              color: Colors.blue[800]!.withOpacity(0.5),
+            ),
+            // DARK MODE CHANGE: Remove shadow
+            boxShadow: [],
           ),
           child: Column(
             children: [
               Row(
                 children: [
-                  const Icon(Icons.location_on, color: Colors.blueAccent),
+                  // DARK MODE CHANGE: Themed accent
+                  Icon(Icons.location_on, color: Colors.blue[400]),
                   const SizedBox(width: 10),
                   Text(
                     'Total Distance: ${controller.totalDistance.toStringAsFixed(2)} km',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
-                      color: Colors.blueGrey[900],
+                      // DARK MODE CHANGE: Light text
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -132,14 +131,16 @@ class MapViewTab extends StatelessWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Icon(Icons.schedule_rounded, color: Colors.blueAccent),
+                  // DARK MODE CHANGE: Themed accent
+                  Icon(Icons.schedule_rounded, color: Colors.blue[400]),
                   const SizedBox(width: 10),
                   Text(
                     'Total Travel Time: ${controller.totalTravelTimeStr}',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
-                      color: Colors.blueGrey[900],
+                      // DARK MODE CHANGE: Light text
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -171,6 +172,8 @@ class MapViewTab extends StatelessWidget {
   }
 
   Widget _buildTimelineIndicator(int idx) {
+    // This widget is already dark-mode compatible (blue gradient + white text)
+    // No changes needed.
     return Column(
       children: [
         Container(
@@ -228,21 +231,12 @@ class MapViewTab extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        // DARK MODE CHANGE: Dark grey card color
+        color: const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        // DARK MODE CHANGE: Remove shadow, use border
+        border: Border.all(color: Colors.grey[800]!, width: 1),
+        boxShadow: [],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -286,7 +280,8 @@ class MapViewTab extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w600,
               fontSize: 15,
-              color: Colors.grey[800],
+              // DARK MODE CHANGE: Light text
+              color: Colors.white,
               height: 1.4,
             ),
             maxLines: 2,
@@ -319,7 +314,8 @@ class MapViewTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF4A90E2).withOpacity(0.1),
+              // DARK MODE CHANGE: Stronger opacity
+              color: const Color(0xFF4A90E2).withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -348,11 +344,12 @@ class MapViewTab extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 16),
       height: 1,
       decoration: BoxDecoration(
+        // DARK MODE CHANGE: Dark grey gradient
         gradient: LinearGradient(
           colors: [
-            Colors.grey.shade200,
-            Colors.grey.shade100,
-            Colors.grey.shade200,
+            Colors.grey[800]!,
+            Colors.grey[700]!,
+            Colors.grey[800]!,
           ],
         ),
       ),
@@ -367,7 +364,7 @@ class MapViewTab extends StatelessWidget {
             'Distance',
             leg['distance']!,
             Icons.route,
-            const Color(0xFF4A90E2),
+            const Color(0xFF4A90E2), // Blue accent
           ),
         ),
         const SizedBox(width: 12),
@@ -376,7 +373,7 @@ class MapViewTab extends StatelessWidget {
             'Duration',
             leg['duration']!,
             Icons.schedule,
-            const Color(0xFFFF9800),
+            const Color(0xFFFF9800), // Orange accent
           ),
         ),
       ],
@@ -387,9 +384,11 @@ class MapViewTab extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        // DARK MODE CHANGE: Nested dark grey
+        color: const Color(0xFF2C2C2C),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
+        // DARK MODE CHANGE: Stronger accent border
+        border: Border.all(color: color.withOpacity(0.5), width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -412,7 +411,8 @@ class MapViewTab extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey[600],
+                    // DARK MODE CHANGE: Lighter grey
+                    color: Colors.grey[400],
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -421,7 +421,7 @@ class MapViewTab extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
-                    color: color,
+                    color: color, // Accent color
                   ),
                 ),
               ],

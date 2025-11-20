@@ -93,11 +93,12 @@ class _TodaysTasksState extends State<TodaysTasks> {
             top: 24,
           ),
           decoration: BoxDecoration(
-            color: Colors.white,
+            // DARK MODE CHANGE: Dark grey modal background
+            color: Color(0xFF1E1E1E),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black26,
+                color: Colors.black54,
                 blurRadius: 15,
                 offset: const Offset(0, -5),
               ),
@@ -112,7 +113,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                 height: 6,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade500,
+                  // DARK MODE CHANGE: Lighter grey handle
+                  color: Colors.grey.shade700,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -121,7 +123,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: Colors.green.shade800,
+                  // DARK MODE CHANGE: Light green text
+                  color: Colors.green.shade300,
                 ),
               ),
               const SizedBox(height: 16),
@@ -131,10 +134,12 @@ class _TodaysTasksState extends State<TodaysTasks> {
                   hintText: 'Enter your remarks (optional)',
                   hintStyle: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey.shade400,
+                    // DARK MODE CHANGE: Lighter hint text
+                    color: Colors.grey.shade500,
                   ),
                   filled: true,
-                  fillColor: Colors.grey.shade200,
+                  // DARK MODE CHANGE: Darker text field fill
+                  fillColor: Colors.grey[800],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
@@ -142,7 +147,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
                 maxLines: 4,
-                style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
+                // DARK MODE CHANGE: White input text
+                style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
               ),
               const SizedBox(height: 20),
               Row(
@@ -156,7 +162,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                     child: Text(
                       'Cancel',
                       style: GoogleFonts.poppins(
-                        color: Colors.grey.shade600,
+                        // DARK MODE CHANGE: Lighter grey text
+                        color: Colors.grey[400],
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -171,7 +178,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade100,
+                      // DARK MODE CHANGE: Dark green button
+                      backgroundColor: Colors.green[800],
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -181,7 +189,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                     child: Text(
                       'Submit',
                       style: GoogleFonts.poppins(
-                        color: Colors.green.shade900,
+                        // DARK MODE CHANGE: Light green text
+                        color: Colors.green[100],
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
                       ),
@@ -208,7 +217,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return const Center(
-          child: CircularProgressIndicator(),
+          // DARK MODE CHANGE: Use themed progress indicator
+          child: CircularProgressIndicator(color: Colors.blue),
         );
       },
     );
@@ -350,15 +360,18 @@ class _TodaysTasksState extends State<TodaysTasks> {
 
   @override
   Widget build(BuildContext context) {
+    // Note: The background color is set by the Scaffold in homeScreen.dart
     return FutureBuilder<List<TaskModel>>(
       future: futureTasks,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           print("[DEBUG] Loading tasks...");
-          return const Center(child: CircularProgressIndicator());
+          // DARK MODE CHANGE: Themed progress indicator
+          return Center(child: CircularProgressIndicator(color: Colors.blue[400]));
         } else if (snapshot.hasError) {
           print("[DEBUG] Error fetching tasks: ${snapshot.error}");
-          return Center(child: Text("Error: ${snapshot.error}"));
+          // DARK MODE CHANGE: Light error text
+          return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: Colors.red[300])));
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           print("[DEBUG] No tasks available for today.");
           return Center(
@@ -366,15 +379,16 @@ class _TodaysTasksState extends State<TodaysTasks> {
               margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
+                // DARK MODE CHANGE: Dark grey gradient
                 gradient: LinearGradient(
-                  colors: [Colors.blue.shade100, Colors.blue.shade50],
+                  colors: [Colors.grey[900]!, Colors.grey[800]!],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.15),
+                    color: Colors.black.withOpacity(0.15),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   )
@@ -384,14 +398,17 @@ class _TodaysTasksState extends State<TodaysTasks> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.assignment_turned_in_outlined,
-                      size: 60, color: Colors.blue.shade600),
+                      size: 60,
+                      // DARK MODE CHANGE: Themed accent color
+                      color: Colors.blue[400]),
                   const SizedBox(height: 16),
                   Text(
                     "No tasks assigned for today",
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      // DARK MODE CHANGE: Light text
+                      color: Colors.white,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -400,7 +417,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                     "Check back later for updates.",
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Colors.black54,
+                      // DARK MODE CHANGE: Lighter text
+                      color: Colors.white70,
                     ),
                   ),
                 ],
@@ -413,7 +431,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
         print("[DEBUG] Loaded ${tasks.length} tasks.");
 
         return RefreshIndicator(
-          color: Colors.blue,
+          // DARK MODE CHANGE: Themed refresh color
+          color: Colors.blue[400]!,
           onRefresh: _refreshTasks,
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -426,8 +445,9 @@ class _TodaysTasksState extends State<TodaysTasks> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                     decoration: BoxDecoration(
+                      // DARK MODE CHANGE: Deeper blue gradient
                       gradient: LinearGradient(
-                        colors: [Colors.blue.shade700, Colors.blue.shade400],
+                        colors: [Colors.blue.shade900, Colors.blue.shade700],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -449,9 +469,11 @@ class _TodaysTasksState extends State<TodaysTasks> {
                   const SizedBox(height: 30),
                   Row(
                     children: [
-                      Text(" Today's Tasks", style: AppText.bold(fontSize: 20)),
+                      // DARK MODE CHANGE: Light text
+                      Text(" Today's Tasks", style: AppText.bold(fontSize: 20, color: Colors.white)),
                       const SizedBox(width: 15),
-                      Expanded(child: Container(height: 1, color: Colors.black26)),
+                      // DARK MODE CHANGE: Light divider
+                      Expanded(child: Container(height: 1, color: Colors.grey[700])),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -471,16 +493,12 @@ class _TodaysTasksState extends State<TodaysTasks> {
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        // DARK MODE CHANGE: Dark grey card color
+        color: const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: Colors.blue.shade100, width: 1),
+        // DARK MODE CHANGE: Remove shadow, use border
+        boxShadow: [],
+        border: Border.all(color: Colors.grey[800]!, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -489,9 +507,10 @@ class _TodaysTasksState extends State<TodaysTasks> {
             children: [
               CircleAvatar(
                 radius: 18,
+                // DARK MODE CHANGE: Slightly lighter dark grey
                 backgroundColor: const Color(0xff2E2F2E),
                 child: Text(
-                  task.order.toString(),
+                  task.priority.toString(),
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -509,7 +528,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Colors.black,
+                        // DARK MODE CHANGE: Light text
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -518,7 +538,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black54,
+                        // DARK MODE CHANGE: Lighter text
+                        color: Colors.white70,
                       ),
                     ),
                   ],
@@ -528,7 +549,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                 margin: const EdgeInsets.only(left: 10),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xff1976D2),
+                  // DARK MODE CHANGE: Deeper blue accent
+                  color: Colors.blue[800],
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
@@ -546,33 +568,31 @@ class _TodaysTasksState extends State<TodaysTasks> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xffF0F8FF),
+              // DARK MODE CHANGE: Nested dark grey
+              color: const Color(0xFF2C2C2C),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xff1976D2).withOpacity(0.2),
+                // DARK MODE CHANGE: Use themed border
+                color: Colors.blue[800]!.withOpacity(0.5),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.shade50,
-                  spreadRadius: 1,
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                )
-              ],
+              // DARK MODE CHANGE: Remove shadow
+              boxShadow: [],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.location_on_rounded, color: Color(0xff1976D2)),
+                    // DARK MODE CHANGE: Themed accent
+                    Icon(Icons.location_on_rounded, color: Colors.blue[400]),
                     const SizedBox(width: 8),
                     Text(
                       "Client Address",
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey,
+                        // DARK MODE CHANGE: Lighter text
+                        color: Colors.grey[400],
                       ),
                     ),
                   ],
@@ -583,7 +603,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                    // DARK MODE CHANGE: Light text
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -595,19 +616,22 @@ class _TodaysTasksState extends State<TodaysTasks> {
                       launchMaps(task.locationString);
                     },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.blue.shade600, width: 1.5),
+                      // DARK MODE CHANGE: Themed accent border
+                      side: BorderSide(color: Colors.blue[400]!, width: 1.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    icon: const Icon(Icons.navigation_rounded, color: Color(0xff1976D2)),
+                    // DARK MODE CHANGE: Themed accent icon
+                    icon: Icon(Icons.navigation_rounded, color: Colors.blue[400]),
                     label: Text(
                       "Navigate",
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xff1976D2),
+                        // DARK MODE CHANGE: Themed accent text
+                        color: Colors.blue[400],
                       ),
                     ),
                   ),
@@ -621,21 +645,24 @@ class _TodaysTasksState extends State<TodaysTasks> {
               Expanded(
                 flex: 3,
                 child: SwipeButton.expand(
-                  thumb: const CircleAvatar(
-                    backgroundColor: Colors.green,
+                  thumb: Container(
+                    // DARK MODE CHANGE: Brighter green thumb
+                    color: Color(0xFF2E7D32), // Dark green
                     child: Icon(Icons.arrow_forward_ios_rounded, color: Colors.white),
                   ),
-                  activeThumbColor: Colors.green,
-                  activeTrackColor: Colors.green.shade100,
-                  inactiveThumbColor: Colors.green.shade50,
-                  inactiveTrackColor: Colors.green.shade100,
+                  // DARK MODE CHANGE: Dark green tracks
+                  activeThumbColor: Colors.green[500],
+                  activeTrackColor: Colors.green[900],
+                  inactiveThumbColor: Colors.green[500],
+                  inactiveTrackColor: Colors.green[900],
                   elevationThumb: 10,
                   height: 50,
                   borderRadius: BorderRadius.circular(12),
                   child: Text(
                     '      Mark as Completed',
                     style: GoogleFonts.poppins(
-                      color: const Color(0xff2E7D32),
+                      // DARK MODE CHANGE: Light green text
+                      color: Colors.green[100],
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -655,14 +682,16 @@ class _TodaysTasksState extends State<TodaysTasks> {
                     launchDialer(task.clientContact);
                   },
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.green.shade50,
-                    side: BorderSide(color: Colors.green.shade600, width: 1.5),
+                    // DARK MODE CHANGE: Transparent background, themed border
+                    backgroundColor: Colors.transparent,
+                    side: BorderSide(color: Colors.green[400]!, width: 1.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Icon(Icons.call, color: Color(0xff2E7D32)),
+                  // DARK MODE CHANGE: Themed icon
+                  child: Icon(Icons.call, color: Colors.green[400]),
                 ),
               ),
             ],

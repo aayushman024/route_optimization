@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:route_optimization/Globals/customTheme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Screens/loginScreen.dart';
 import 'Screens/homeScreen.dart';
@@ -22,11 +23,7 @@ class RouteOptimizer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        progressIndicatorTheme: ProgressIndicatorThemeData(
-            color: Colors.blue,
-        ),
-            textTheme: GoogleFonts.poppinsTextTheme()),
+      theme: customTheme,
       debugShowCheckedModeBanner: false,
       home: FutureBuilder<Widget>(
         future: _getInitialScreen(),

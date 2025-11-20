@@ -1,3 +1,4 @@
+// File: home_screen_dark.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:lottie/lottie.dart' hide Marker;
 import 'package:route_optimization/Components/floatingActionButton.dart';
 import 'package:route_optimization/Components/taskSummary.dart';
+import 'package:route_optimization/Globals/fontStyle.dart';
 import 'package:route_optimization/Services/task_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Components/AppDrawer.dart';
@@ -25,6 +27,14 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   late HomeController _controller;
+
+
+  static const Color kScaffoldBg = Color(0xFF000000);
+  static const Color kSurface = Color(0xFF0A0A0A);
+  static const Color kCard = Color(0xFF121212);
+  static const Color kAccent = Color(0xFF1E8E6E);
+  static const Color kTextPrimary = Colors.white;
+  static const Color kTextSecondary = Colors.white70;
 
   @override
   void initState() {
@@ -81,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (_controller.currentPosition == null || _controller.isLocationLoading) {
       return Scaffold(
-        backgroundColor: const Color(0xffF0F8FF),
+        backgroundColor: kScaffoldBg,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -96,13 +106,14 @@ class _HomeScreenState extends State<HomeScreen>
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
+                    color: kTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 20),
                 Lottie.asset(
                   'assets/Location.json',
-                  width: 250,
-                  height: 250,
+                  width: 220,
+                  height: 220,
                   frameRate: FrameRate(120),
                   repeat: true,
                 ),
@@ -114,58 +125,53 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xffF0F8FF),
+      backgroundColor: kScaffoldBg,
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: const Color(0xff2E2F2E),
+        iconTheme: const IconThemeData(color: kTextPrimary),
+        backgroundColor: kCard,
+        elevation: 0,
         actions: [
-          IconButton(
+          // Minimal, low-pixel refresh button (outlined white)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
+            child: OutlinedButton(
               onPressed: _refreshTasks,
-              icon: Icon(Icons.refresh_rounded, color: Colors.white,)
-          ),
-          const SizedBox(width: 10,),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.location_off,
-                color: _controller.isTrackingActive ? Colors.grey : Colors.red,
-                size: 28,
-              ),
-              Transform.scale(
-                scale: 0.8,
-                child: Switch(
-                  value: _controller.isTrackingActive,
-                  activeThumbColor: Colors.green,
-                  inactiveThumbColor: Colors.red,
-                  activeTrackColor: Colors.green.withAlpha(40),
-                  inactiveTrackColor: Colors.red.withAlpha(40),
-                  onChanged: (val) {
-                    _controller.toggleTracking();
-                  },
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white24, width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                backgroundColor: Colors.white.withAlpha(25),
               ),
-              Icon(
-                Icons.location_on,
-                color: _controller.isTrackingActive
-                    ? Colors.green
-                    : Colors.grey,
-                size: 30,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.refresh_rounded, color: kTextPrimary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Refresh',
+                    style: AppText.normal(
+                      color: kTextPrimary,
+                      fontSize: 14,
+                    ),
+                  )
+                ],
               ),
-              const SizedBox(width: 20),
-            ],
+            ),
           ),
         ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(screenHeight * 0.1),
           child: Container(
-            color: const Color(0xff2E2F2E),
+            color: kCard,
             child: TabBar(
               controller: _tabController,
-              indicatorColor: Color(0xffF0F8FF),
-              indicatorWeight: 5,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white60,
+              dividerColor: Colors.transparent,
+              indicatorColor: kTextPrimary,
+              indicatorWeight: 4,
+              labelColor: kTextPrimary,
+              unselectedLabelColor: kTextSecondary,
               labelStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,

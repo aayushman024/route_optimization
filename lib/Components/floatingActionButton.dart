@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:google_fonts/google_fonts.dart'; // <-- Added import
 import 'package:http/http.dart' as http;
 import 'package:route_optimization/Globals/fontStyle.dart';
 import 'package:route_optimization/Services/task_api.dart';
@@ -49,10 +50,12 @@ class _FABState extends State<FAB> {
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          backgroundColor: const Color(0xffF0F8FF),
+          // DARK MODE CHANGE: Dark modal background
+          backgroundColor: const Color(0xFF1E1E1E),
           builder: (context) => CommentBottomSheet(clients: _clients),
         );
       },
+      // This is already dark-mode compliant
       backgroundColor: const Color(0xff292929),
       tooltip: 'Add Comment',
       child: const Icon(Icons.add, color: Colors.white, size: 60),
@@ -166,9 +169,6 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
         if (place.name != null && place.name!.isNotEmpty) {
           addressComponents.add(place.name!);
         }
-        // if (place.street != null && place.street!.isNotEmpty) {
-        //   addressComponents.add(place.street!);
-        // }
         if (place.subLocality != null && place.subLocality!.isNotEmpty) {
           addressComponents.add(place.subLocality!);
         }
@@ -247,8 +247,10 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
         if (response.statusCode == 200 || response.statusCode == 201) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Comment submitted successfully"),
-            backgroundColor: Colors.green,),
+            SnackBar(
+              content: const Text("Comment submitted successfully"),
+              backgroundColor: Colors.green[800],
+            ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -279,57 +281,65 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 //Disclaimer
                 Container(
                   width: screenWidth,
-                  padding: EdgeInsetsGeometry.symmetric(vertical: 10, horizontal: 12),
-                  margin: EdgeInsetsGeometry.directional(bottom: 20),
+                  padding:
+                  const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    border: Border.all(color: Colors.orange),
-                    borderRadius: BorderRadius.circular(15)
+                      color: const Color(0xFF2C2C2C),
+                      border: Border.all(color: Colors.orange.shade700),
+                      borderRadius: BorderRadius.circular(15)),
+                  child: Text(
+                    'Adding a comment for any task/client will mark it as "Pending".',
+                    style: AppText.bold(color: Colors.orange.shade300),
                   ),
-                  child: Text('Adding a comment for any task/client will mark it as "Pending".',
-                  style: AppText.bold(
-                    color: Colors.orange
-                  ),),
                 ),
 
                 // Location
                 Row(
                   children: [
-                    Text("Your Location", style: AppText.normal(fontSize: 16)),
+                    Text("Your Location",
+                        style:
+                        AppText.normal(fontSize: 16, color: Colors.white)),
                     const SizedBox(width: 10),
-                    Expanded(child: Container(height: 1, color: Colors.black54)),
+                    Expanded(
+                        child: Container(height: 1, color: Colors.grey[700])),
                   ],
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  style: const TextStyle(color: Colors.black),
+                  style: const TextStyle(color: Colors.white),
                   controller: _locationController,
                   enabled: false,
                   maxLines: null,
                   decoration: InputDecoration(
                     suffixIcon: _isLoadingLocation
-                        ? const Padding(
-                      padding: EdgeInsets.all(12.0),
+                        ? Padding(
+                      padding: const EdgeInsets.all(12.0),
                       child: SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.grey),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.grey.shade400),
                         ),
                       ),
                     )
                         : null,
                     hintText: "Fetching location...",
+                    hintStyle: TextStyle(color: Colors.grey[500]),
                     filled: true,
-                    fillColor: Colors.grey[200],
+                    fillColor: Colors.grey[800],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    disabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
                     ),
                   ),
                 ),
@@ -338,27 +348,36 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                 // Select Client
                 Row(
                   children: [
-                    Text("Select Client", style: AppText.normal(fontSize: 16)),
+                    Text("Select Client",
+                        style:
+                        AppText.normal(fontSize: 16, color: Colors.white)),
                     const SizedBox(width: 10),
-                    Expanded(child: Container(height: 1, color: Colors.black54)),
+                    Expanded(
+                        child: Container(height: 1, color: Colors.grey[700])),
                   ],
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  style: const TextStyle(color: Colors.white),
                   value: _selectedClientId,
                   decoration: InputDecoration(
                     hintText: 'Client Name',
+                    hintStyle: TextStyle(color: Colors.grey[500]),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: Colors.grey[800],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
                   ),
-                  dropdownColor: const Color(0xffF0F8FF),
+                  dropdownColor: Colors.grey[900],
                   items: widget.clients
                       .map((client) => DropdownMenuItem(
                     value: client["id"],
-                    child: Text(client["name"] ?? ""),
+                    child: Text(
+                      client["name"] ?? "",
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ))
                       .toList(),
                   onChanged: (value) {
@@ -374,13 +393,17 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                 // Add Comment
                 Row(
                   children: [
-                    Text("Add Comment", style: AppText.normal(fontSize: 16)),
+                    Text("Add Comment",
+                        style:
+                        AppText.normal(fontSize: 16, color: Colors.white)),
                     const SizedBox(width: 10),
-                    Expanded(child: Container(height: 1, color: Colors.black54)),
+                    Expanded(
+                        child: Container(height: 1, color: Colors.grey[700])),
                   ],
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
+                  style: const TextStyle(color: Colors.white),
                   controller: _commentController,
                   maxLines: 6,
                   validator: (value) => value == null || value.isEmpty
@@ -388,10 +411,12 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                       : null,
                   decoration: InputDecoration(
                     hintText: "Enter your comment here...",
+                    hintStyle: TextStyle(color: Colors.grey[500]),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: Colors.grey[800],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
                   ),
                 ),
@@ -402,19 +427,20 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                   width: screenWidth,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xff292929),
+                      // THEME CHANGE: Use green accent color from TodaysTasks
+                      backgroundColor: Colors.green[800],
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     onPressed: () => _submitForm(context),
-                    child: const Text(
-                      "Submit",
-                      style: TextStyle(
-                          color: Colors.white,
+                    child: Text(
+                      "Submit Comment",
+                      style: GoogleFonts.poppins(
+                          color: Colors.green[100],
                           fontSize: 16,
-                          fontWeight: FontWeight.w700),
+                          fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
