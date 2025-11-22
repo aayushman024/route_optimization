@@ -52,6 +52,7 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   intl: ^0.20.2
   provider: ^6.1.5+1
+  battery_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'dart:isolate';
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:battery_plus/battery_plus.dart';
 
 // Import model types to check success/failure
 import 'package:flutter_foreground_task/models/service_request_result.dart';
@@ -336,6 +338,11 @@ class LocationService {
         return;
       }
 
+      // Get Battery Level
+      final int batteryLevel = await Battery().batteryLevel;
+    //  final int batteryLevel = await battery.batteryLevel;
+      print("[DEBUG] Battery level: $batteryLevel%");
+
       final url = Uri.parse("$apiBaseURL/api/route-plan/update-current-location");
       print("[DEBUG] Sending POST request to $url");
 
@@ -348,6 +355,7 @@ class LocationService {
         body: jsonEncode({
           'long': pos.longitude,
           'lat': pos.latitude,
+          'batteryPercentage': batteryLevel,
         }),
       ).timeout(Duration(seconds: 30));
 
