@@ -361,6 +361,7 @@ class LocationService {
 
       print("[DEBUG] Server response status: ${response.statusCode}");
       print("[DEBUG] Server response body: ${response.body}");
+      // print(token);
 
       if (response.statusCode == 200) {
         print("[DEBUG] Location sent successfully");

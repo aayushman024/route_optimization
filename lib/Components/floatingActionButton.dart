@@ -33,8 +33,9 @@ class _FABState extends State<FAB> {
     setState(() {
       _clients = tasks
           .map((task) => {
-        "id": task.clientId,
-        "name": "Task - ${task.order}, ${task.clientName}"
+        "id": task.clientId ?? "",
+        "visitId": task.taskId ?? "",
+        "name": "Task - ${task.order ?? ''}, ${task.clientName ?? ''}"
       })
           .toList();
     });
@@ -58,7 +59,7 @@ class _FABState extends State<FAB> {
       // This is already dark-mode compliant
       backgroundColor: const Color(0xff292929),
       tooltip: 'Add Comment',
-      child: const Icon(Icons.add, color: Colors.white, size: 60),
+      child: const Icon(Icons.comment, color: Colors.white, size: 60),
     );
   }
 }
@@ -78,6 +79,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
   String? _selectedClientId;
+  String? _selectedVisitId; // <-- added to hold taskId / visitId
   Position? _currentPosition;
 
   final _formKey = GlobalKey<FormState>();
@@ -223,8 +225,16 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
         return;
       }
 
+      if (_selectedClientId == null || _selectedVisitId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please select a client/task")),
+        );
+        return;
+      }
+
       final payload = {
         "clientId": _selectedClientId,
+        "visitId": _selectedVisitId, // <-- send selected visitId (taskId)
         "remarksByFE": _commentController.text.trim(),
         "markCommentLocation": {
           "coordinates": [
@@ -239,7 +249,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
           Uri.parse("$apiBaseURL/api/route-plan/add-remarks"),
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
+            'Authorization': token != null ? 'Bearer $token' : '',
           },
           body: jsonEncode(payload),
         );
@@ -328,7 +338,10 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                         ),
                       ),
                     )
-                        : null,
+                        : IconButton(
+                      icon: const Icon(Icons.refresh, color: Colors.white),
+                      onPressed: _getCurrentPosition,
+                    ),
                     hintText: "Fetching location...",
                     hintStyle: TextStyle(color: Colors.grey[500]),
                     filled: true,
@@ -383,6 +396,11 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                   onChanged: (value) {
                     setState(() {
                       _selectedClientId = value;
+                      // find the visitId (taskId) belonging to selected client id
+                      final selectedMap = widget.clients.firstWhere(
+                              (item) => item["id"] == value,
+                          orElse: () => {"visitId": ""});
+                      _selectedVisitId = selectedMap["visitId"];
                     });
                   },
                   validator: (value) =>

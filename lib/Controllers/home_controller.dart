@@ -220,14 +220,14 @@ class HomeController {
       final newMarkers = <Marker>{};
 
       for (var client in clients) {
-        final icon = await _createNumberedMarkerIcon(client.priority);
+        final icon = await _createNumberedMarkerIcon(client.order);
         newMarkers.add(
           Marker(
             markerId: MarkerId(client.clientId),
             position: LatLng(client.latitude, client.longitude),
             infoWindow: InfoWindow(
               title: client.clientName,
-              snippet: 'Order: ${client.priority}',
+              snippet: 'Order: ${client.order}',
             ),
             icon: icon,
           ),

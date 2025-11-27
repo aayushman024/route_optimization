@@ -1,7 +1,7 @@
 class Client {
   final String clientId;
   final String clientName;
-  final int priority;
+  final int order;
   final double latitude;
   final double longitude;
   final String visitingAddress;
@@ -9,7 +9,7 @@ class Client {
   Client({
     required this.clientId,
     required this.clientName,
-    required this.priority,
+    required this.order,
     required this.latitude,
     required this.longitude,
     required this.visitingAddress,
@@ -19,7 +19,7 @@ class Client {
     return Client(
       clientId: json['clientId'],
       clientName: json['clientName'],
-      priority: json['priority'],
+      order: json['order'],
       latitude: (json['coordinates'][1] as num).toDouble(),
       longitude: (json['coordinates'][0] as num).toDouble(),
       visitingAddress: json['visitingAddress'],

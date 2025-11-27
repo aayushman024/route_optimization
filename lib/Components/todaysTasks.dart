@@ -510,7 +510,7 @@ class _TodaysTasksState extends State<TodaysTasks> {
                 // DARK MODE CHANGE: Slightly lighter dark grey
                 backgroundColor: const Color(0xff2E2F2E),
                 child: Text(
-                  task.priority.toString(),
+                  task.order.toString(),
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
