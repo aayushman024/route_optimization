@@ -22,7 +22,7 @@ class LocationService {
   static Position? lastSentPosition;
   static DateTime? lastSentTime;
   static StreamSubscription<Position>? _locationStream;
-  static const int POLLING_INTERVAL_SEC = 600;
+  static const int POLLING_INTERVAL_SEC = 599;
   static const double POLLING_DISTANCE_M = 250;
 
 
@@ -296,7 +296,7 @@ class LocationService {
 
       Position position = await Geolocator.getCurrentPosition(
         locationSettings: AndroidSettings(
-          accuracy: LocationAccuracy.medium,
+          accuracy: LocationAccuracy.low,
           timeLimit: Duration(seconds: 15),
         ),
       );
@@ -423,7 +423,7 @@ class LocationService {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy: LocationAccuracy.low,
         timeLimit: Duration(seconds: 60),
       );
 

@@ -9,6 +9,7 @@ import 'package:route_optimization/Globals/fontStyle.dart';
 import 'package:route_optimization/Services/task_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../Screens/homeScreen.dart';
 import '../Services/apiGlobal.dart';
 import '../Services/auth_api.dart';
 
@@ -59,7 +60,7 @@ class _FABState extends State<FAB> {
       // This is already dark-mode compliant
       backgroundColor: const Color(0xff292929),
       tooltip: 'Add Comment',
-      child: const Icon(Icons.comment, color: Colors.white, size: 60),
+      child: const Icon(Icons.comment, color: Colors.white, size: 45),
     );
   }
 }
@@ -79,7 +80,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
   String? _selectedClientId;
-  String? _selectedVisitId; // <-- added to hold taskId / visitId
+  String? _selectedVisitId;
   Position? _currentPosition;
 
   final _formKey = GlobalKey<FormState>();
@@ -256,6 +257,13 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
 
         if (response.statusCode == 200 || response.statusCode == 201) {
           Navigator.pop(context);
+          //TaskApi.fetchTasks();
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(),
+            ),
+                (route) => false,
+          );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text("Comment submitted successfully"),

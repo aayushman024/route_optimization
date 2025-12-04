@@ -29,6 +29,16 @@ class HomeController {
   int totalTravelTimeMinutes = 0;
   String totalTravelTimeStr = '';
 
+  // OPTIMIZATION: Cache for marker icons to prevent UI jank
+  final Map<int, BitmapDescriptor> _markerIconCache = {};
+
+  // OPTIMIZATION: Standardize location settings for better battery life
+  // 'balanced' uses WiFi/Cell towers mostly, 'high' uses GPS continuously.
+  final LocationSettings _locationSettings = const LocationSettings(
+    accuracy: LocationAccuracy.low,
+    distanceFilter: 250, // Only update if moved 250 meters
+  );
+
   HomeController({
     required this.onStateChanged,
     required this.context,
@@ -164,11 +174,9 @@ class HomeController {
       currentPosition = await _getCurrentLocation();
       onStateChanged();
 
+      // OPTIMIZATION: Use standardized settings
       _positionStream = Geolocator.getPositionStream(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          distanceFilter: 250,
-        ),
+        locationSettings: _locationSettings,
       ).listen((Position position) {
         LatLng newPos = LatLng(position.latitude, position.longitude);
         currentPosition = newPos;
@@ -183,6 +191,11 @@ class HomeController {
   }
 
   Future<BitmapDescriptor> _createNumberedMarkerIcon(int number) async {
+    // OPTIMIZATION: Check cache first
+    if (_markerIconCache.containsKey(number)) {
+      return _markerIconCache[number]!;
+    }
+
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     final paint = Paint()..color = Colors.blue;
@@ -210,7 +223,12 @@ class HomeController {
     final picture = recorder.endRecording();
     final img = await picture.toImage(100, 100);
     final data = await img.toByteData(format: ui.ImageByteFormat.png);
-    return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+    final icon = BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+
+    // OPTIMIZATION: Save to cache
+    _markerIconCache[number] = icon;
+
+    return icon;
   }
 
   Future<void> _setupMarkers() async {
@@ -220,6 +238,7 @@ class HomeController {
       final newMarkers = <Marker>{};
 
       for (var client in clients) {
+        // This will now be instant for repeated numbers due to caching
         final icon = await _createNumberedMarkerIcon(client.order);
         newMarkers.add(
           Marker(
@@ -279,8 +298,9 @@ class HomeController {
       return Future.error('Location permissions are permanently denied');
     }
 
+    // OPTIMIZATION: Use balanced accuracy here too
     Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+      desiredAccuracy: LocationAccuracy.low,
     );
     return LatLng(position.latitude, position.longitude);
   }
@@ -399,11 +419,9 @@ class HomeController {
       mapController!.animateCamera(CameraUpdate.newLatLng(currentPosition!));
     }
 
+    // OPTIMIZATION: Use standardized settings
     _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
+      locationSettings: _locationSettings,
     ).listen((Position position) {
       LatLng newPos = LatLng(position.latitude, position.longitude);
       _updateCurrentLocationMarker(newPos);

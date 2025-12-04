@@ -131,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen>
         backgroundColor: kCard,
         elevation: 0,
         actions: [
+          Lottie.asset('assets/Location.json'),
           // Minimal, low-pixel refresh button (outlined white)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),

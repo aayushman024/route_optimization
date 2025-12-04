@@ -77,14 +77,14 @@ class AppDrawer extends StatelessWidget {
                 //     Navigator.push(context, CupertinoPageRoute(builder: (_)=> CompletedTasks()));
                 //   },
                 // ),
-                _buildDrawerItem(
-                  icon: Icons.pending_actions_rounded,
-                  title: "Pending Tasks",
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, CupertinoPageRoute(builder: (_)=> PendingTasksScreen()));
-                  },
-                ),
+                // _buildDrawerItem(
+                //   icon: Icons.pending_actions_rounded,
+                //   title: "Pending Tasks",
+                //   onTap: () {
+                //     Navigator.pop(context);
+                //     Navigator.push(context, CupertinoPageRoute(builder: (_)=> PendingTasksScreen()));
+                //   },
+                // ),
                 const Divider(color: Colors.white24, thickness: 0.5, indent: 16, endIndent: 16),
                 _buildDrawerItem(
                   icon: Icons.logout_rounded,

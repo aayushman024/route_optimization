@@ -414,7 +414,7 @@ class _TodaysTasksState extends State<TodaysTasks> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Check back later for updates.",
+                    "Refresh or check back later for updates.",
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       // DARK MODE CHANGE: Lighter text
