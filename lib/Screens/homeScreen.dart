@@ -28,7 +28,6 @@ class _HomeScreenState extends State<HomeScreen>
   late TabController _tabController;
   late HomeController _controller;
 
-
   static const Color kScaffoldBg = Color(0xFF000000);
   static const Color kSurface = Color(0xFF0A0A0A);
   static const Color kCard = Color(0xFF121212);
@@ -40,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     _loadCurrentUser();
+    _fetchTaskCount();
     WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 2, vsync: this);
     _controller = HomeController(
@@ -64,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       _controller.checkServiceStatus();
+      _fetchTaskCount();
     }
   }
 
@@ -85,44 +86,28 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  int _todaysTaskCount = 0;
+
+  Future<void> _fetchTaskCount() async {
+    try {
+      // Re-using your existing TaskApi
+      final tasks = await TaskApi.fetchTasks();
+      if (mounted) {
+        setState(() {
+          _todaysTaskCount = tasks.length;
+        });
+      }
+    } catch (e) {
+      print("Error fetching task count: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 
-    if (_controller.currentPosition == null || _controller.isLocationLoading) {
-      return Scaffold(
-        backgroundColor: kScaffoldBg,
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _controller.isLocationLoading
-                      ? 'Setting up location tracking...'
-                      : 'Fetching your location...',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: kTextPrimary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Lottie.asset(
-                  'assets/Location.json',
-                  width: 220,
-                  height: 220,
-                  frameRate: FrameRate(120),
-                  repeat: true,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    // 1. REMOVED the full-screen loading check here.
+    // The UI will now render immediately.
 
     return Scaffold(
       backgroundColor: kScaffoldBg,
@@ -131,8 +116,19 @@ class _HomeScreenState extends State<HomeScreen>
         backgroundColor: kCard,
         elevation: 0,
         actions: [
-          Lottie.asset('assets/Location.json'),
-          // Minimal, low-pixel refresh button (outlined white)
+          // 2. Conditional Lottie Animation
+          // Shows only when location is loading
+          if (_controller.isLocationLoading)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Lottie.asset(
+                'assets/Location.json',
+                height: 40, // Small size for AppBar
+                width: 40,
+              ),
+            ),
+
+          // Existing Refresh Button
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
             child: OutlinedButton(
@@ -175,18 +171,49 @@ class _HomeScreenState extends State<HomeScreen>
               unselectedLabelColor: kTextSecondary,
               labelStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
-                fontSize: 15,
+                fontSize: 16,
               ),
               unselectedLabelStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.w400,
                 fontSize: 15,
               ),
-              tabs: const [
+              tabs: [
                 Tab(
-                  icon: Icon(Icons.task_alt_rounded, size: 20),
-                  text: 'Today\'s Tasks',
-                ),
-                Tab(icon: Icon(Icons.map_rounded, size: 20), text: 'Map View'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 8,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Tasks"),
+                      // Only show badge if we have tasks
+                      if (_todaysTaskCount > 0) ...[
+                        //const SizedBox(width: 8),
+                        CircleAvatar(
+                          radius: 11, // Size of the circle
+                          backgroundColor: Colors.redAccent,
+                          child: Text(
+                            '$_todaysTaskCount',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ]
+                    ],
+                  ),
+                  icon: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Icon(
+                      Icons.task_alt_rounded,
+                      size: 20,
+                                    ),
+                  ),),
+                const Tab(icon: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                  child: Icon(Icons.map_rounded, size: 20),
+                ), text: 'Map View'),
               ],
             ),
           ),

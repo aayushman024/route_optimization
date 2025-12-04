@@ -9,14 +9,16 @@ import 'package:route_optimization/Screens/homeScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_swipe_button/flutter_swipe_button.dart';
+
 import '../Globals/userDetails.dart';
 import '../Models/task_model.dart';
 import '../Services/apiGlobal.dart';
 import '../Services/task_api.dart';
 import '../DialogBoxes/modalBottomSheet.dart';
 import '../Globals/fontStyle.dart';
-import 'package:flutter_swipe_button/flutter_swipe_button.dart';
 
 class TodaysTasks extends StatefulWidget {
   const TodaysTasks({super.key});
@@ -38,9 +40,7 @@ class _TodaysTasksState extends State<TodaysTasks> {
   Future<void> _refreshTasks() async {
     print("[DEBUG] Pull-to-refresh triggered...");
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => HomeScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => HomeScreen()),
           (route) => false,
     );
   }
@@ -51,34 +51,20 @@ class _TodaysTasksState extends State<TodaysTasks> {
     LocationPermission permission;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      print("[DEBUG] Location services disabled.");
-      return null;
-    }
+    if (!serviceEnabled) return null;
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      print("[DEBUG] Location permission denied, requesting permission...");
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        print("[DEBUG] Location permission denied again.");
-        return null;
-      }
+      if (permission == LocationPermission.denied) return null;
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      print("[DEBUG] Location permission permanently denied.");
-      return null;
-    }
-
-    final position = await Geolocator.getCurrentPosition();
-    print("[DEBUG] Current location: Lat=${position.latitude}, Lng=${position.longitude}");
-    return position;
+    if (permission == LocationPermission.deniedForever) return null;
+    return await Geolocator.getCurrentPosition();
   }
 
   Future<void> _showRemarksModal(BuildContext context, String clientId, String taskId) async {
     final TextEditingController remarksController = TextEditingController();
-    print("[DEBUG] Opening remarks modal for clientId=$clientId, taskId=$taskId");
 
     showModalBottomSheet(
       context: context,
@@ -87,118 +73,115 @@ class _TodaysTasksState extends State<TodaysTasks> {
       builder: (BuildContext sheetContext) {
         return Container(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-            left: 16,
-            right: 16,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+            left: 20,
+            right: 20,
             top: 24,
           ),
           decoration: BoxDecoration(
-            // DARK MODE CHANGE: Dark grey modal background
-            color: Color(0xFF1E1E1E),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black54,
-                blurRadius: 15,
-                offset: const Offset(0, -5),
-              ),
-            ],
+            color: const Color(0xFF1A1A1A),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            border: Border(top: BorderSide(color: Colors.grey[800]!, width: 1)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header with gradient
               Container(
-                width: 60,
-                height: 6,
-                margin: const EdgeInsets.only(bottom: 16),
+                width: 50,
+                height: 5,
                 decoration: BoxDecoration(
-                  // DARK MODE CHANGE: Lighter grey handle
-                  color: Colors.grey.shade700,
-                  borderRadius: BorderRadius.circular(3),
+                  color: Colors.grey[700],
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              const SizedBox(height: 25),
               Text(
-                'Mark Task as Completed?',
+                'Task Completed?',
                 style: GoogleFonts.poppins(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  // DARK MODE CHANGE: Light green text
-                  color: Colors.green.shade300,
+                  color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              Text(
+                'Add any remarks or notes below.',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[400],
+                ),
+              ),
+              const SizedBox(height: 25),
               TextField(
                 controller: remarksController,
                 decoration: InputDecoration(
-                  hintText: 'Enter your remarks (optional)',
+                  hintText: '(OPTIONAL)',
                   hintStyle: GoogleFonts.poppins(
                     fontSize: 14,
-                    // DARK MODE CHANGE: Lighter hint text
-                    color: Colors.grey.shade500,
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
                   ),
                   filled: true,
-                  // DARK MODE CHANGE: Darker text field fill
-                  fillColor: Colors.grey[800],
+                  fillColor: Colors.black38,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
+                    borderSide: BorderSide(color: Colors.grey[800]!),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding: const EdgeInsets.all(16),
                 ),
-                maxLines: 4,
-                // DARK MODE CHANGE: White input text
+                maxLines: 3,
                 style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: () {
-                      print("[DEBUG] Modal cancelled.");
-                      Navigator.of(sheetContext).pop();
-                    },
-                    child: Text(
-                      'Cancel',
-                      style: GoogleFonts.poppins(
-                        // DARK MODE CHANGE: Lighter grey text
-                        color: Colors.grey[400],
-                        fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.poppins(
+                          color: Colors.grey[400],
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 30),
-                  ElevatedButton(
-                    onPressed: () async {
-                      print("[DEBUG] Remarks submitted: '${remarksController.text.trim()}'");
-                      Navigator.of(sheetContext).pop();
-                      await _submitCompletion(
-                          context, clientId, taskId, remarksController.text.trim()
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      // DARK MODE CHANGE: Dark green button
-                      backgroundColor: Colors.green[800],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.of(sheetContext).pop();
+                        await _submitCompletion(
+                          context,
+                          clientId,
+                          taskId,
+                          remarksController.text.trim(),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade900,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      elevation: 5,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    ),
-                    child: Text(
-                      'Submit',
-                      style: GoogleFonts.poppins(
-                        // DARK MODE CHANGE: Light green text
-                        color: Colors.green[100],
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                      child: Text(
+                        'Submit & Complete',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
             ],
           ),
         );
@@ -206,37 +189,25 @@ class _TodaysTasksState extends State<TodaysTasks> {
     );
   }
 
-
-
   Future<void> _submitCompletion(BuildContext context, String clientId, String taskId, String remarks) async {
-    print("[DEBUG] Submitting completion for clientId=$clientId, visitId=$taskId");
-    print("[DEBUG] Remarks: '$remarks'");
-
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(
-          // DARK MODE CHANGE: Use themed progress indicator
-          child: CircularProgressIndicator(color: Colors.blue),
-        );
-      },
+      builder: (BuildContext context) => const Center(child: CircularProgressIndicator(color: Colors.blue)),
     );
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    print("[DEBUG] Retrieved JWT token: ${token != null ? 'Available' : 'Null'}");
-
     final position = await _getCurrentLocation();
+
     if (position == null) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Location not available. Please enable location services."),
+          content: Text("Location not available."),
           backgroundColor: Colors.red,
         ),
       );
-      print("[DEBUG] Task completion aborted — no location available.");
       return;
     }
 
@@ -245,17 +216,13 @@ class _TodaysTasksState extends State<TodaysTasks> {
       "visitId": taskId,
       "remarksByFE": remarks,
       "markCommentLocation": {
-        "coordinates": [position.longitude, position.latitude]
-      }
+        "coordinates": [position.longitude, position.latitude],
+      },
     };
-    print("[DEBUG] API Payload: $payload");
-
-    final url = Uri.parse("$apiBaseURL/api/route-plan/mark-completed");
-    print("[DEBUG] Sending POST request to: $url");
 
     try {
       final response = await http.post(
-        url,
+        Uri.parse("$apiBaseURL/api/route-plan/mark-completed"),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -263,14 +230,9 @@ class _TodaysTasksState extends State<TodaysTasks> {
         body: jsonEncode(payload),
       );
 
-      print("[DEBUG] Response Status Code: ${response.statusCode}");
-      print("[DEBUG] Response Body: ${response.body}");
-
       Navigator.of(context).pop();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("[DEBUG] Task completion successful.");
-
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -289,14 +251,10 @@ class _TodaysTasksState extends State<TodaysTasks> {
 
         await Future.delayed(const Duration(seconds: 3));
         Navigator.of(context).pop();
-
         setState(() {
           _refreshTasks();
-          print("[DEBUG] Refetching task list after successful completion...");
         });
-      }
-      else {
-        print("[DEBUG] Task completion failed — response: ${response.body}");
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Failed: ${response.body}"),
@@ -306,7 +264,6 @@ class _TodaysTasksState extends State<TodaysTasks> {
       }
     } catch (e) {
       Navigator.of(context).pop();
-      print("[DEBUG] Exception during API call: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error: ${e.toString()}"),
@@ -317,40 +274,15 @@ class _TodaysTasksState extends State<TodaysTasks> {
   }
 
   Future<void> launchDialer(String phoneNumber) async {
-    print("[DEBUG] Launching dialer for $phoneNumber");
     final String formatted = phoneNumber.startsWith("+") ? phoneNumber : "+91$phoneNumber";
-
-    if (Platform.isAndroid) {
-      try {
-        final intent = AndroidIntent(
-          action: 'android.intent.action.DIAL',
-          data: 'tel:$formatted',
-        );
-        await intent.launch();
-        print("[DEBUG] Dialer intent launched successfully.");
-      } catch (e) {
-        print("[DEBUG] Error launching dialer: $e");
-      }
-    } else {
-      final Uri uri = Uri(scheme: 'tel', path: formatted);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        print("[DEBUG] Dialer opened using URL launcher.");
-      } else {
-        print("[DEBUG] Unable to launch dialer URL.");
-      }
-    }
+    final Uri uri = Uri(scheme: 'tel', path: formatted);
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   Future<void> launchMaps(String url) async {
-    print("[DEBUG] Launching map: $url");
     final Uri mapUri = Uri.parse(url);
-    if (await canLaunchUrl(mapUri)) {
+    if (await canLaunchUrl(mapUri))
       await launchUrl(mapUri, mode: LaunchMode.externalApplication);
-      print("[DEBUG] Map opened successfully.");
-    } else {
-      print("[DEBUG] Failed to open map URL.");
-    }
   }
 
   String formatTimeRange(DateTime start, DateTime end) {
@@ -358,343 +290,484 @@ class _TodaysTasksState extends State<TodaysTasks> {
     return "${formatter.format(start)} - ${formatter.format(end)}";
   }
 
+  // --- PRIORITY HELPER ---
+  Map<String, dynamic> _getPriorityInfo(int priority) {
+    switch (priority) {
+      case 1:
+        return {'label': 'Highest', 'color': Colors.redAccent};
+      case 2:
+        return {'label': 'High', 'color': Colors.orangeAccent};
+      case 3:
+        return {'label': 'Medium', 'color': Colors.yellowAccent};
+      case 4:
+        return {'label': 'Low', 'color': Colors.greenAccent};
+      case 5:
+        return {'label': 'Lowest', 'color': Colors.lightBlueAccent};
+      default:
+        return {'label': 'Normal', 'color': Colors.grey};
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Note: The background color is set by the Scaffold in homeScreen.dart
     return FutureBuilder<List<TaskModel>>(
       future: futureTasks,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          print("[DEBUG] Loading tasks...");
-          // DARK MODE CHANGE: Themed progress indicator
           return Center(child: CircularProgressIndicator(color: Colors.blue[400]));
         } else if (snapshot.hasError) {
-          print("[DEBUG] Error fetching tasks: ${snapshot.error}");
-          // DARK MODE CHANGE: Light error text
-          return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: Colors.red[300])));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          print("[DEBUG] No tasks available for today.");
           return Center(
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                // DARK MODE CHANGE: Dark grey gradient
-                gradient: LinearGradient(
-                  colors: [Colors.grey[900]!, Colors.grey[800]!],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  )
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.assignment_turned_in_outlined,
-                      size: 60,
-                      // DARK MODE CHANGE: Themed accent color
-                      color: Colors.blue[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    "No tasks assigned for today",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      // DARK MODE CHANGE: Light text
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    "Refresh or check back later for updates.",
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      // DARK MODE CHANGE: Lighter text
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
+            child: Text(
+              "Error loading tasks",
+              style: TextStyle(color: Colors.grey[500]),
             ),
           );
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyState();
         }
 
         final tasks = snapshot.data!;
-        print("[DEBUG] Loaded ${tasks.length} tasks.");
 
         return RefreshIndicator(
-          // DARK MODE CHANGE: Themed refresh color
-          color: Colors.blue[400]!,
+          color: Colors.blue,
+          backgroundColor: Colors.grey[900],
           onRefresh: _refreshTasks,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            children: [
+              _buildWelcomeHeader(),
+              const SizedBox(height: 25),
+              Row(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                    decoration: BoxDecoration(
-                      // DARK MODE CHANGE: Deeper blue gradient
-                      gradient: LinearGradient(
-                        colors: [Colors.blue.shade900, Colors.blue.shade700],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: RichText(
-                      text: TextSpan(
-                        style: AppText.normal(fontSize: 18, color: Colors.white),
-                        children: [
-                          const TextSpan(text: 'Welcome, '),
-                          TextSpan(
-                            text: name,
-                            style: AppText.bold(fontSize: 18, color: Colors.white),
-                          ),
-                        ],
-                      ),
+                  Text(
+                    " Today's Schedule",
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  Row(
-                    children: [
-                      // DARK MODE CHANGE: Light text
-                      Text(" Today's Tasks", style: AppText.bold(fontSize: 20, color: Colors.white)),
-                      const SizedBox(width: 15),
-                      // DARK MODE CHANGE: Light divider
-                      Expanded(child: Container(height: 1, color: Colors.grey[700])),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Divider(color: Colors.grey[800], thickness: 1.5),
                   ),
-                  const SizedBox(height: 20),
-                  ...tasks.map((task) => _buildTaskItem(task)).toList(),
-                  const SizedBox(height: 80),
                 ],
               ),
-            ),
+              const SizedBox(height: 20),
+              ...tasks.map((task) => _buildModernTaskCard(task)).toList(),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildTaskItem(TaskModel task) {
+  Widget _buildWelcomeHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade900, Colors.blue.shade700],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: AppText.light(fontSize: 18, color: Colors.white),
+          children: [
+            const TextSpan(text: 'Welcome, '),
+            TextSpan(
+              text: name,
+              style: AppText.bold(fontSize: 18, color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.task_alt, size: 70, color: Colors.grey[800]),
+          const SizedBox(height: 20),
+          Text(
+            "All Caught Up!",
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernTaskCard(TaskModel task) {
+    // Get Priority Info
+    final priorityInfo = _getPriorityInfo(task.priority);
+    final Color priorityColor = priorityInfo['color'];
+    final String priorityLabel = priorityInfo['label'];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // DARK MODE CHANGE: Dark grey card color
         color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(20),
-        // DARK MODE CHANGE: Remove shadow, use border
-        boxShadow: [],
-        border: Border.all(color: Colors.grey[800]!, width: 1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                // DARK MODE CHANGE: Slightly lighter dark grey
-                backgroundColor: const Color(0xff2E2F2E),
-                child: Text(
-                  task.order.toString(),
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      task.clientName,
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        // DARK MODE CHANGE: Light text
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      task.purposeOfVisit,
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        // DARK MODE CHANGE: Lighter text
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                margin: const EdgeInsets.only(left: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  // DARK MODE CHANGE: Deeper blue accent
-                  color: Colors.blue[800],
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  formatTimeRange(task.availabilityStart, task.availabilityEnd),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              // DARK MODE CHANGE: Nested dark grey
-              color: const Color(0xFF2C2C2C),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                // DARK MODE CHANGE: Use themed border
-                color: Colors.blue[800]!.withOpacity(0.5),
-              ),
-              // DARK MODE CHANGE: Remove shadow
-              boxShadow: [],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // 1. HEADER: Badge + Name
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    // DARK MODE CHANGE: Themed accent
-                    Icon(Icons.location_on_rounded, color: Colors.blue[400]),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Client Address",
+                // Order Badge
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2C2C2C),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      task.order.toString(),
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        // DARK MODE CHANGE: Lighter text
-                        color: Colors.grey[400],
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  task.visitingAddress,
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    // DARK MODE CHANGE: Light text
-                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      print("[DEBUG] Navigate button tapped for task ${task.taskId}");
-                      launchMaps(task.locationString);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      // DARK MODE CHANGE: Themed accent border
-                      side: BorderSide(color: Colors.blue[400]!, width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    // DARK MODE CHANGE: Themed accent icon
-                    icon: Icon(Icons.navigation_rounded, color: Colors.blue[400]),
-                    label: Text(
-                      "Navigate",
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        // DARK MODE CHANGE: Themed accent text
-                        color: Colors.blue[400],
-                      ),
+                const SizedBox(width: 16),
+                // Client Name
+                Expanded(
+                  child: Text(
+                    task.clientName,
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1.2,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: SwipeButton.expand(
-                  thumb: Container(
-                    // DARK MODE CHANGE: Brighter green thumb
-                    color: Color(0xFF2E7D32), // Dark green
-                    child: Icon(Icons.arrow_forward_ios_rounded, color: Colors.white),
+          const SizedBox(height: 18),
+
+          // 2. PURPOSE OF VISIT - Enhanced and Prominent
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blue.shade900.withOpacity(0),
+                    const Color(0xFF2C2C2C),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.blue.withOpacity(0.15),
+                  width: 1.5,
+                ),
+                // boxShadow: [
+                //   BoxShadow(
+                //     color: Colors.blue.withOpacity(0.08),
+                //     blurRadius: 12,
+                //     offset: const Offset(0, 4),
+                //   ),
+                // ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade700.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.assignment_outlined,
+                          color: Colors.blue.shade200,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        "Purpose of Visit",
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue.shade200,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
-                  // DARK MODE CHANGE: Dark green tracks
-                  activeThumbColor: Colors.green[500],
-                  activeTrackColor: Colors.green[900],
-                  inactiveThumbColor: Colors.green[500],
-                  inactiveTrackColor: Colors.green[900],
-                  elevationThumb: 10,
-                  height: 50,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Text(
-                    '      Mark as Completed',
+                  const SizedBox(height: 12),
+                  Text(
+                    task.purposeOfVisit,
                     style: GoogleFonts.poppins(
-                      // DARK MODE CHANGE: Light green text
-                      color: Colors.green[100],
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      height: 1.5,
+                      //letterSpacing: 0.2,
                     ),
                   ),
-                  onSwipe: () async {
-                    print("[DEBUG] Swipe complete for taskId=${task.taskId}");
-                    await _showRemarksModal(context, task.clientId, task.taskId);
-                  },
-                ),
+                ],
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                flex: 1,
-                child: OutlinedButton(
-                  onPressed: () {
-                    print("[DEBUG] Call button tapped for ${task.clientContact}");
-                    launchDialer(task.clientContact);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    // DARK MODE CHANGE: Transparent background, themed border
-                    backgroundColor: Colors.transparent,
-                    side: BorderSide(color: Colors.green[400]!, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // 3. DETAILS: Time & Priority Pills
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+            child: Row(
+              children: [
+                // Time Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[900]!.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.withOpacity(0.2)),
                   ),
-                  // DARK MODE CHANGE: Themed icon
-                  child: Icon(Icons.call, color: Colors.green[400]),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.access_time_filled_rounded,
+                        size: 16,
+                        color: Colors.blue[300],
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        formatTimeRange(task.availabilityStart, task.availabilityEnd),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[100],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 12),
+                // Priority Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: priorityColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: priorityColor.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.flag_rounded, size: 16, color: priorityColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        priorityLabel,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: priorityColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 4. ADDRESS SECTION
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C2C2C),
+                borderRadius: BorderRadius.circular(16),
               ),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Label
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        color: Colors.blue[400],
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Visiting Address",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  // Address Text
+                  Text(
+                    task.visitingAddress,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+                  // Navigate Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => launchMaps(task.locationString),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.blue[400]!, width: 1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      icon: Icon(
+                        Icons.navigation_rounded,
+                        color: Colors.blue[400],
+                        size: 20,
+                      ),
+                      label: Text(
+                        "Navigate",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[400],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 5. ACTION ROW: Swipe & Call
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: SwipeButton.expand(
+                    thumb: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade900,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                    activeThumbColor: Colors.green.shade900,
+                    activeTrackColor: const Color(0xFF2E7D32),
+                    inactiveThumbColor: Colors.green.shade900,
+                    inactiveTrackColor: const Color(0xFF1B3A20),
+                    elevationThumb: 4,
+                    height: 58,
+                    borderRadius: BorderRadius.circular(18),
+                    child: Text(
+                      '           Slide to Complete',
+                      style: GoogleFonts.poppins(
+                        color: Colors.green[100],
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    onSwipe: () async {
+                      await _showRemarksModal(context, task.clientId, task.taskId);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 1,
+                  child: SizedBox(
+                    height: 58,
+                    child: OutlinedButton(
+                      onPressed: () => launchDialer(task.clientContact),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        side: BorderSide(
+                          color: Colors.green.shade300,
+                          width: 0.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.call,
+                        color: Colors.green.shade400,
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

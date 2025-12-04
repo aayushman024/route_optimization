@@ -30,6 +30,34 @@ class MapViewTab extends StatelessWidget {
   }
 
   Widget _buildMapContainer() {
+    // 1. FIX: Check if currentPosition is null before building the map
+    if (controller.currentPosition == null) {
+      return Container(
+        height: 500,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[800]!, width: 1),
+          color: const Color(0xFF121212), // Match card background
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: Color(0xFF1E8E6E)),
+              const SizedBox(height: 16),
+              Text(
+                "Loading Map...",
+                style: GoogleFonts.poppins(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       height: 500,
       decoration: BoxDecoration(
@@ -43,6 +71,7 @@ class MapViewTab extends StatelessWidget {
             GoogleMap(
               onMapCreated: controller.onMapCreated,
               initialCameraPosition: CameraPosition(
+                // 2. SAFE ACCESS: We know currentPosition is not null here
                 target: controller.currentPosition!,
                 zoom: 10.6,
               ),
