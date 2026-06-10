@@ -2,13 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:route_optimization/Globals/customTheme.dart';
+import 'package:route_optimization/Globals/dimensions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:route_optimization/Services/notificationService.dart';
 import 'Screens/loginScreen.dart';
 import 'Screens/homeScreen.dart';
+import 'Services/alarm_service.dart';
 
 Future<void> main() async {
   // 1. Ensure bindings are initialized for async calls
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase and FCM
+  try {
+    await Firebase.initializeApp();
+    await NotificationService().initialize();
+  } catch (e) {
+    print('[FCM] Firebase initialization error: $e');
+  }
+
+  await AlarmService.initialize();
 
   FlutterForegroundTask.initCommunicationPort();
 
@@ -35,7 +49,12 @@ class RouteOptimizer extends StatelessWidget {
       theme: customTheme,
       debugShowCheckedModeBanner: false,
       // 4. Render the screen directly, removing FutureBuilder and loader
-      home: initialScreen,
+      home: Builder(
+        builder: (context) {
+          SizeUtil.init(context);
+          return initialScreen;
+        },
+      ),
     );
   }
 }

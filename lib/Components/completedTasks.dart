@@ -9,6 +9,7 @@ import '../Models/task_model.dart';
 import '../Services/task_api.dart';
 import '../DialogBoxes/modalBottomSheet.dart';
 import '../Globals/fontStyle.dart';
+import '../Globals/dimensions.dart';
 import 'package:flutter_swipe_button/flutter_swipe_button.dart';
 
 class CompletedTasksContainer extends StatefulWidget {
@@ -21,6 +22,14 @@ class CompletedTasksContainer extends StatefulWidget {
 class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
   late Future<List<TaskModel>> futureTasks;
 
+  String? _formattedAdditionalAddressDetails(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -28,9 +37,15 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
   }
 
   Future<void> launchDialer(String phoneNumber) async {
-    final String formatted = phoneNumber.startsWith("+")
-        ? phoneNumber
-        : "+91$phoneNumber";
+    final String cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final String formatted;
+    if (cleaned.startsWith("+")) {
+      formatted = cleaned;
+    } else if (cleaned.startsWith("91") && cleaned.length == 12) {
+      formatted = "+$cleaned";
+    } else {
+      formatted = "+91$cleaned";
+    }
 
     if (Platform.isAndroid) {
       try {
@@ -64,6 +79,7 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     return FutureBuilder<List<TaskModel>>(
       future: futureTasks,
       builder: (context, snapshot) {
@@ -74,15 +90,15 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
             child: Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(24),
+              margin: EdgeInsets.all(20.sdp),
+              padding: EdgeInsets.all(24.sdp),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.blue.shade100, Colors.blue.shade50],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.sdp),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.blue.withOpacity(0.15),
@@ -95,12 +111,12 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.assignment_turned_in_outlined,
-                      size: 60, color: Colors.blue.shade600),
-                  const SizedBox(height: 16),
+                      size: 60.sdp, color: Colors.blue.shade600),
+                  SizedBox(height: 16.sdp),
                   Text(
                     "No Completed Tasks",
                     style: GoogleFonts.poppins(
-                      fontSize: 18,
+                      fontSize: 18.ssp,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
@@ -119,15 +135,15 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
         if (completedTasks.isEmpty) {
           return Center(
             child: Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(24),
+              margin: EdgeInsets.all(20.sdp),
+              padding: EdgeInsets.all(24.sdp),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.blue.shade100, Colors.blue.shade50],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.sdp),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.blue.withOpacity(0.15),
@@ -140,12 +156,12 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.assignment_turned_in_outlined,
-                      size: 60, color: Colors.blue.shade600),
-                  const SizedBox(height: 16),
+                      size: 60.sdp, color: Colors.blue.shade600),
+                  SizedBox(height: 16.sdp),
                   Text(
                     "You have not completed any task today yet",
                     style: GoogleFonts.poppins(
-                      fontSize: 18,
+                      fontSize: 18.ssp,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
                     ),
@@ -159,7 +175,7 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
 
         return SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+            padding: EdgeInsets.symmetric(vertical: 20.sdp, horizontal: 12.sdp),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -173,12 +189,14 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
   }
 
   Widget _buildTaskItem(TaskModel task) {
+    final additionalAddressDetails =
+        _formattedAdditionalAddressDetails(task.additionalAddressDetails);
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: 24.sdp),
+      padding: EdgeInsets.all(16.sdp),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sdp),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -195,18 +213,18 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
           Row(
             children: [
               CircleAvatar(
-                radius: 18,
+                radius: 18.sdp,
                 backgroundColor: const Color(0xff2E2F2E),
                 child: Text(
                   task.order.toString(),
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
-                    fontSize: 16,
+                    fontSize: 16.ssp,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.sdp),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,16 +232,16 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
                     Text(
                       task.clientName,
                       style: GoogleFonts.poppins(
-                        fontSize: 18,
+                        fontSize: 18.ssp,
                         fontWeight: FontWeight.w700,
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.sdp),
                     Text(
                       task.purposeOfVisit,
                       style: GoogleFonts.poppins(
-                        fontSize: 15,
+                        fontSize: 15.ssp,
                         fontWeight: FontWeight.w500,
                         color: Colors.black54,
                       ),
@@ -234,14 +252,14 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
             ],
           ),
 
-          const SizedBox(height: 20),
+          SizedBox(height: 20.sdp),
 
           // Address + Navigate
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.all(14.sdp),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.sdp),
               border: Border.all(
                 color: const Color(0xff1976D2).withOpacity(0.2),
               ),
@@ -255,32 +273,44 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
                       Icons.location_on_rounded,
                       color: Color(0xff1976D2),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8.sdp),
                     Text(
                       "Client Address",
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
+                        fontSize: 14.ssp,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.sdp),
                 Text(
                   task.visitingAddress,
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
+                    fontSize: 15.ssp,
                     fontWeight: FontWeight.w500,
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 10),
+                if (additionalAddressDetails != null) ...[
+                  SizedBox(height: 8.sdp),
+                  Text(
+                    additionalAddressDetails,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.ssp,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black54,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+                SizedBox(height: 10.sdp),
               ],
             ),
           ),
 
-          const SizedBox(height: 20),
+          SizedBox(height: 20.sdp),
 
           // Swipe + Call
           Row(
@@ -292,9 +322,9 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: Colors.blue.shade600, width: 1.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.sdp),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 14.sdp),
                   ),
                   icon: const Icon(
                     Icons.navigation_rounded,
@@ -303,14 +333,14 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
                   label: Text(
                     "Navigate",
                     style: GoogleFonts.poppins(
-                      fontSize: 15,
+                      fontSize: 15.ssp,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xff1976D2),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.sdp),
               Expanded(
                 flex: 1,
                 child: OutlinedButton.icon(
@@ -320,18 +350,18 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
                     side:
                     BorderSide(color: Colors.green.shade600, width: 1.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.sdp),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 14.sdp),
                   ),
                   label: Text('Call Client',
                   style: AppText.bold(
-                    color: Color(0xff2E7D32)
+                    color: const Color(0xff2E7D32)
                   ),),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.call_rounded,
-                    color: Color(0xff2E7D32),
-                    size: 22,
+                    color: const Color(0xff2E7D32),
+                    size: 22.sdp,
                   ),
                 ),
               ),

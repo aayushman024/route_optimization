@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dimensions.dart';
 
 class AppText {
   /// Base function for all text styles
@@ -14,7 +15,7 @@ class AppText {
   }) {
     return GoogleFonts.poppins(
       fontWeight: fontWeight,
-      fontSize: fontSize ?? 14,
+      fontSize: (fontSize ?? 14).ssp,
       color: color ?? Colors.black,
       letterSpacing: letterSpacing,
       height: height,

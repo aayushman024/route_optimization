@@ -8,6 +8,7 @@ import '../Services/task_api.dart';
 import '../Models/task_model.dart';
 import '../DialogBoxes/modalBottomSheet.dart';
 import '../Globals/fontStyle.dart';
+import '../Globals/dimensions.dart';
 import 'package:flutter_swipe_button/flutter_swipe_button.dart';
 
 class PendingTasks extends StatefulWidget {
@@ -20,6 +21,14 @@ class PendingTasks extends StatefulWidget {
 class _PendingTasksState extends State<PendingTasks> {
   late Future<List<TaskModel>> futureTasks;
 
+  String? _formattedAdditionalAddressDetails(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -27,9 +36,15 @@ class _PendingTasksState extends State<PendingTasks> {
   }
 
   Future<void> launchDialer(String phoneNumber) async {
-    final String formatted = phoneNumber.startsWith("+")
-        ? phoneNumber
-        : "+91$phoneNumber";
+    final String cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final String formatted;
+    if (cleaned.startsWith("+")) {
+      formatted = cleaned;
+    } else if (cleaned.startsWith("91") && cleaned.length == 12) {
+      formatted = "+$cleaned";
+    } else {
+      formatted = "+91$cleaned";
+    }
 
     if (Platform.isAndroid) {
       try {
@@ -63,6 +78,7 @@ class _PendingTasksState extends State<PendingTasks> {
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     return FutureBuilder<List<TaskModel>>(
       future: futureTasks,
       builder: (context, snapshot) {
@@ -74,15 +90,15 @@ class _PendingTasksState extends State<PendingTasks> {
           // Empty state container
           return Center(
             child: Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(24),
+              margin: EdgeInsets.all(20.sdp),
+              padding: EdgeInsets.all(24.sdp),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.blue.shade100, Colors.blue.shade50],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.sdp),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.blue.withOpacity(0.15),
@@ -95,18 +111,18 @@ class _PendingTasksState extends State<PendingTasks> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.assignment_turned_in_outlined,
-                      size: 60, color: Colors.blue.shade600),
-                  const SizedBox(height: 16),
+                      size: 60.sdp, color: Colors.blue.shade600),
+                  SizedBox(height: 16.sdp),
                   Text(
                     "No Pending Tasks",
                     style: GoogleFonts.poppins(
-                      fontSize: 18,
+                      fontSize: 18.ssp,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6.sdp),
                 ],
               ),
             ),
@@ -115,15 +131,14 @@ class _PendingTasksState extends State<PendingTasks> {
 
         final tasks =
         snapshot.data!.where((task) => task.status.toLowerCase() == "pending").toList();
-       // final tasks = snapshot.data!;
 
         return SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+            padding: EdgeInsets.symmetric(vertical: 20.sdp, horizontal: 10.sdp),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20),
+                SizedBox(height: 20.sdp),
 
                 // Task list
                 ...tasks.map((task) => _buildTaskItem(task)).toList(),
@@ -136,12 +151,14 @@ class _PendingTasksState extends State<PendingTasks> {
   }
 
   Widget _buildTaskItem(TaskModel task) {
+    final additionalAddressDetails =
+        _formattedAdditionalAddressDetails(task.additionalAddressDetails);
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: 24.sdp),
+      padding: EdgeInsets.all(16.sdp),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sdp),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -158,18 +175,18 @@ class _PendingTasksState extends State<PendingTasks> {
           Row(
             children: [
               CircleAvatar(
-                radius: 18,
+                radius: 18.sdp,
                 backgroundColor: const Color(0xff2E2F2E),
                 child: Text(
                   task.order.toString(),
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
-                    fontSize: 16,
+                    fontSize: 16.ssp,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.sdp),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,16 +194,16 @@ class _PendingTasksState extends State<PendingTasks> {
                     Text(
                       task.clientName,
                       style: GoogleFonts.poppins(
-                        fontSize: 18,
+                        fontSize: 18.ssp,
                         fontWeight: FontWeight.w700,
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.sdp),
                     Text(
                       task.purposeOfVisit,
                       style: GoogleFonts.poppins(
-                        fontSize: 15,
+                        fontSize: 15.ssp,
                         fontWeight: FontWeight.w500,
                         color: Colors.black54,
                       ),
@@ -195,17 +212,17 @@ class _PendingTasksState extends State<PendingTasks> {
                 ),
               ),
               Container(
-                margin: EdgeInsetsGeometry.only(left: 10),
+                margin: EdgeInsets.only(left: 10.sdp),
                 padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                EdgeInsets.symmetric(horizontal: 12.sdp, vertical: 6.sdp),
                 decoration: BoxDecoration(
                   color: const Color(0xff1976D2),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.sdp),
                 ),
                 child: Text(
                   formatTimeRange(task.availabilityStart, task.availabilityEnd),
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
+                    fontSize: 12.ssp,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -214,14 +231,14 @@ class _PendingTasksState extends State<PendingTasks> {
             ],
           ),
 
-          const SizedBox(height: 20),
+          SizedBox(height: 20.sdp),
 
           // Address + Navigate
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.all(14.sdp),
             decoration: BoxDecoration(
-                color: Color(0xffF0F8FF),
-                borderRadius: BorderRadius.circular(12),
+                color: const Color(0xffF0F8FF),
+                borderRadius: BorderRadius.circular(12.sdp),
                 border: Border.all(
                   color: const Color(0xff1976D2).withOpacity(0.2),
                 ),
@@ -230,7 +247,7 @@ class _PendingTasksState extends State<PendingTasks> {
                       color: Colors.blue.shade50,
                       spreadRadius: 1,
                       blurRadius: 10,
-                      offset: Offset(0, 3)
+                      offset: const Offset(0, 3)
                   )
                 ]
             ),
@@ -243,27 +260,39 @@ class _PendingTasksState extends State<PendingTasks> {
                       Icons.location_on_rounded,
                       color: Color(0xff1976D2),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8.sdp),
                     Text(
                       "Client Address",
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
+                        fontSize: 14.ssp,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.sdp),
                 Text(
                   task.visitingAddress,
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
+                    fontSize: 15.ssp,
                     fontWeight: FontWeight.w500,
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 20),
+                if (additionalAddressDetails != null) ...[
+                  SizedBox(height: 8.sdp),
+                  Text(
+                    additionalAddressDetails,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.ssp,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black54,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+                SizedBox(height: 20.sdp),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -271,9 +300,9 @@ class _PendingTasksState extends State<PendingTasks> {
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: Colors.blue.shade600, width: 1.5),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.sdp),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14.sdp),
                     ),
                     icon: const Icon(
                       Icons.navigation_rounded,
@@ -282,7 +311,7 @@ class _PendingTasksState extends State<PendingTasks> {
                     label: Text(
                       "Navigate",
                       style: GoogleFonts.poppins(
-                        fontSize: 15,
+                        fontSize: 15.ssp,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xff1976D2),
                       ),
@@ -293,7 +322,7 @@ class _PendingTasksState extends State<PendingTasks> {
             ),
           ),
 
-          const SizedBox(height: 20),
+          SizedBox(height: 20.sdp),
 
           // Swipe + Call
           Row(
@@ -313,13 +342,13 @@ class _PendingTasksState extends State<PendingTasks> {
                   inactiveThumbColor: Colors.green.shade50,
                   inactiveTrackColor: Colors.green.shade100,
                   elevationThumb: 10,
-                  height: 50,
-                  borderRadius: BorderRadius.circular(12),
+                  height: 50.sdp,
+                  borderRadius: BorderRadius.circular(12.sdp),
                   child: Text(
                     '      Mark as Completed',
                     style: GoogleFonts.poppins(
                       color: const Color(0xff2E7D32),
-                      fontSize: 15,
+                      fontSize: 15.ssp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -344,7 +373,7 @@ class _PendingTasksState extends State<PendingTasks> {
                   },
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.sdp),
               Expanded(
                 flex: 1,
                 child: OutlinedButton(
@@ -354,14 +383,14 @@ class _PendingTasksState extends State<PendingTasks> {
                     side:
                     BorderSide(color: Colors.green.shade600, width: 1.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.sdp),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 14.sdp),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.call_rounded,
-                    color: Color(0xff2E7D32),
-                    size: 22,
+                    color: const Color(0xff2E7D32),
+                    size: 22.sdp,
                   ),
                 ),
               ),

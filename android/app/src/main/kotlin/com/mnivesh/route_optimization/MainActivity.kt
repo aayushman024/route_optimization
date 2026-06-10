@@ -1,4 +1,4 @@
-package com.example.route_optimization
+package com.mnivesh.route_optimization
 
 import io.flutter.embedding.android.FlutterActivity
 

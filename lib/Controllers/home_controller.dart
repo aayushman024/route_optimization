@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:http/http.dart' as http;
+import '../Models/client_model.dart';
 import '../Services/apiGlobal.dart';
 import '../Services/client_service.dart';
 import '../Services/locationTracking.dart';
@@ -29,6 +30,8 @@ class HomeController {
   int totalTravelTimeMinutes = 0;
   String totalTravelTimeStr = '';
 
+  List<Client> clients = [];
+
   // OPTIMIZATION: Cache for marker icons to prevent UI jank
   final Map<int, BitmapDescriptor> _markerIconCache = {};
 
@@ -49,7 +52,6 @@ class HomeController {
     _autoStartTracking();
     _startServiceMonitoring();
     refreshMapSafely();
-    _setupMarkers();
   }
 
   void dispose() {
@@ -183,8 +185,6 @@ class HomeController {
         onStateChanged();
         _updateCurrentLocationMarker(newPos);
       });
-
-      _fetchRouteSummary(markers.map((m) => m.position).toList());
     } catch (e) {
       print("[ERROR] Failed to get initial location: $e");
     }
@@ -233,7 +233,10 @@ class HomeController {
 
   Future<void> _setupMarkers() async {
     try {
-      final clients = await ClientService().fetchClients();
+      final fetchedClients = await ClientService().fetchClients();
+      // Sort clients by order to build correct path
+      fetchedClients.sort((a, b) => a.order.compareTo(b.order));
+      clients = fetchedClients;
 
       final newMarkers = <Marker>{};
 
@@ -255,10 +258,9 @@ class HomeController {
 
       markers = newMarkers;
 
-      // Update route summary after fetching markers
-      await _fetchRouteSummary(
-        markers.where((m) => m.markerId.value != "current_location").map((m) => m.position).toList(),
-      );
+      // Update route summary using the sorted coordinates of clients
+      final sortedPoints = clients.map((c) => LatLng(c.latitude, c.longitude)).toList();
+      await _fetchRouteSummary(sortedPoints);
 
       onStateChanged();
     } catch (e) {
@@ -268,14 +270,16 @@ class HomeController {
 
 
   void _updateCurrentLocationMarker(LatLng position) {
-    markers.removeWhere((m) => m.markerId.value == "current_location");
-    markers.add(
+    final newMarkers = Set<Marker>.of(markers);
+    newMarkers.removeWhere((m) => m.markerId.value == "current_location");
+    newMarkers.add(
       Marker(
         markerId: const MarkerId("current_location"),
         position: position,
         infoWindow: const InfoWindow(title: "Your Current Location"),
       ),
     );
+    markers = newMarkers;
     onStateChanged();
   }
 
@@ -359,8 +363,9 @@ class HomeController {
         totalDistance = totalDist;
         totalTravelTimeMinutes = totalMinutes;
         totalTravelTimeStr = totalTimeStr;
-        polylines.clear();
-        polylines.add(polyline);
+        
+        // REASSIGN set to force GoogleMap widget to detect the new polylines
+        polylines = {polyline};
         onStateChanged();
       }
     } else {
@@ -410,10 +415,8 @@ class HomeController {
 
     _updateCurrentLocationMarker(currentPosition!);
 
-    await _fetchRouteSummary(markers
-        .where((m) => m.markerId.value != "current_location")
-        .map((m) => m.position)
-        .toList());
+    final sortedPoints = clients.map((c) => LatLng(c.latitude, c.longitude)).toList();
+    await _fetchRouteSummary(sortedPoints);
 
     if (mapController != null && currentPosition != null) {
       mapController!.animateCamera(CameraUpdate.newLatLng(currentPosition!));

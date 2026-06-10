@@ -5,6 +5,7 @@ import 'package:lottie/lottie.dart';
 import 'package:route_optimization/Components/GradientButton.dart';
 import 'package:route_optimization/Components/NormalElevatedButton.dart';
 import 'package:route_optimization/Globals/fontStyle.dart';
+import 'package:route_optimization/Globals/dimensions.dart';
 import 'package:route_optimization/Services/locationTracking.dart';
 
 class ModalBottomSheet extends StatefulWidget {
@@ -19,15 +20,16 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+      padding: EdgeInsets.symmetric(horizontal: 20.sdp, vertical: 30.sdp),
       height: MediaQuery.of(context).size.height * 0.3,
       child: showAnimation
           ? Center(
         child: Lottie.asset(
           'assets/Success.json',
-          height: 100,
-          width: 100,
+          height: 100.sdp,
+          width: 100.sdp,
           repeat: false,
           frameRate: FrameRate(120),
           onLoaded: (composition) {
@@ -45,7 +47,7 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
             'Are you sure you want to mark this Task as Completed?',
             style: GoogleFonts.poppins(
               color: Colors.black,
-              fontSize: 18,
+              fontSize: 18.ssp,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,

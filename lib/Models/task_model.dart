@@ -4,6 +4,7 @@ class TaskModel {
   final String clientName;
   final String clientContact;
   final String visitingAddress;
+  final String? additionalAddressDetails;
   final DateTime availabilityStart;
   final DateTime availabilityEnd;
   final int priority;
@@ -11,6 +12,7 @@ class TaskModel {
   final bool onHold;
   final int order;
   final String status;
+  final bool canGoAnytime;
   final String feId;
   final String feName;
   final String purposeOfVisit;
@@ -22,6 +24,7 @@ class TaskModel {
     required this.clientName,
     required this.clientContact,
     required this.visitingAddress,
+    required this.additionalAddressDetails,
     required this.availabilityStart,
     required this.availabilityEnd,
     required this.priority,
@@ -29,6 +32,7 @@ class TaskModel {
     required this.onHold,
     required this.order,
     required this.status,
+    required this.canGoAnytime,
     required this.feId,
     required this.feName,
     required this.purposeOfVisit,
@@ -42,6 +46,7 @@ class TaskModel {
       clientName: json['clientName'] ?? '',
       clientContact: json['clientContact'] ?? '',
       visitingAddress: json['visitingAddress'] ?? '',
+      additionalAddressDetails: json['additionalAddressDetails']?.toString(),
       availabilityStart: DateTime.parse(json['availability']['start']),
       availabilityEnd: DateTime.parse(json['availability']['end']),
       priority: json['priority'] ?? 0,
@@ -49,6 +54,7 @@ class TaskModel {
       onHold: json['onHold'] ?? false,
       order: json['order'] ?? 0,
       status: json['status'] ?? '',
+      canGoAnytime: json['canGoAnytime'] ?? false,
       feId: json['feId'] ?? '',
       feName: json['feName'] ?? '',
       purposeOfVisit: json['purposeOfVisit'] ?? '',
@@ -63,6 +69,7 @@ class TaskModel {
       'clientName': clientName,
       'clientContact': clientContact,
       'visitingAddress': visitingAddress,
+      'additionalAddressDetails': additionalAddressDetails,
       'availability': {
         'start': availabilityStart.toIso8601String(),
         'end': availabilityEnd.toIso8601String(),

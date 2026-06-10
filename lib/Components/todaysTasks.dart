@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_swipe_button/flutter_swipe_button.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../Globals/userDetails.dart';
 import '../Models/task_model.dart';
@@ -19,16 +20,26 @@ import '../Services/apiGlobal.dart';
 import '../Services/task_api.dart';
 import '../DialogBoxes/modalBottomSheet.dart';
 import '../Globals/fontStyle.dart';
+import '../Globals/dimensions.dart';
 
 class TodaysTasks extends StatefulWidget {
-  const TodaysTasks({super.key});
+  final Future<void> Function()? onRefresh;
+  const TodaysTasks({super.key, this.onRefresh});
 
   @override
-  State<TodaysTasks> createState() => _TodaysTasksState();
+  State<TodaysTasks> createState() => TodaysTasksState();
 }
 
-class _TodaysTasksState extends State<TodaysTasks> {
+class TodaysTasksState extends State<TodaysTasks> {
   late Future<List<TaskModel>> futureTasks;
+
+  String? _formattedAdditionalAddressDetails(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
+  }
 
   @override
   void initState() {
@@ -37,12 +48,21 @@ class _TodaysTasksState extends State<TodaysTasks> {
     futureTasks = TaskApi.fetchTasks();
   }
 
+  Future<void> refresh() async {
+    print("[DEBUG] Refreshing tasks in-place...");
+    setState(() {
+      futureTasks = TaskApi.fetchTasks();
+    });
+    await futureTasks;
+  }
+
   Future<void> _refreshTasks() async {
-    print("[DEBUG] Pull-to-refresh triggered...");
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => HomeScreen()),
-          (route) => false,
-    );
+    print("[DEBUG] Pull-to-refresh triggered inside TodaysTasksState...");
+    if (widget.onRefresh != null) {
+      await widget.onRefresh!();
+    } else {
+      await refresh();
+    }
   }
 
   Future<Position?> _getCurrentLocation() async {
@@ -65,13 +85,78 @@ class _TodaysTasksState extends State<TodaysTasks> {
 
   Future<void> _showRemarksModal(BuildContext context, String clientId, String taskId) async {
     final TextEditingController remarksController = TextEditingController();
+    List<File> selectedImages = [];
+    final ImagePicker picker = ImagePicker();
+
+    Future<void> pickImage(StateSetter setState) async {
+      if (selectedImages.length >= 10) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Maximum 10 images allowed'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF2C2C2C),
+            title: Text('Select Image Source', style: GoogleFonts.poppins(color: Colors.white)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.camera_alt, color: Colors.blue),
+                  title: Text('Camera', style: GoogleFonts.poppins(color: Colors.white)),
+                  onTap: () async {
+                    Navigator.pop(dialogContext);
+                    final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+                    if (image != null) {
+                      setState(() {
+                        selectedImages.add(File(image.path));
+                      });
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library, color: Colors.green),
+                  title: Text('Gallery', style: GoogleFonts.poppins(color: Colors.white)),
+                  onTap: () async {
+                    Navigator.pop(dialogContext);
+                    final List<XFile> images = await picker.pickMultiImage(imageQuality: 70);
+                    if (images.isNotEmpty) {
+                      setState(() {
+                        if (selectedImages.length + images.length > 10) {
+                          final int remaining = 10 - selectedImages.length;
+                          selectedImages.addAll(images.take(remaining).map((image) => File(image.path)));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Added $remaining images. Limit is 10.'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        } else {
+                          selectedImages.addAll(images.map((image) => File(image.path)));
+                        }
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext sheetContext) {
-        return Container(
+        return StatefulBuilder(
+          builder: (BuildContext dialogContext, StateSetter setState) {
+            return Container(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
             left: 20,
@@ -132,6 +217,78 @@ class _TodaysTasksState extends State<TodaysTasks> {
                 maxLines: 3,
                 style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
               ),
+              const SizedBox(height: 20),
+              // Image Attach Button & List
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Attachments (${selectedImages.length}/10)',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => pickImage(setState),
+                    icon: const Icon(Icons.add_a_photo, size: 18, color: Colors.blue),
+                    label: Text(
+                      'Add Image',
+                      style: GoogleFonts.poppins(color: Colors.blue, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              if (selectedImages.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 80,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: selectedImages.length,
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey[700]!),
+                              image: DecorationImage(
+                                image: FileImage(selectedImages[index]),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: -5,
+                            right: 5,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedImages.removeAt(index);
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close, size: 14, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
               const SizedBox(height: 25),
               Row(
                 children: [
@@ -161,6 +318,7 @@ class _TodaysTasksState extends State<TodaysTasks> {
                           clientId,
                           taskId,
                           remarksController.text.trim(),
+                          selectedImages,
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -185,11 +343,13 @@ class _TodaysTasksState extends State<TodaysTasks> {
             ],
           ),
         );
+          },
+        );
       },
     );
   }
 
-  Future<void> _submitCompletion(BuildContext context, String clientId, String taskId, String remarks) async {
+  Future<void> _submitCompletion(BuildContext context, String clientId, String taskId, String remarks, List<File> images) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -201,7 +361,9 @@ class _TodaysTasksState extends State<TodaysTasks> {
     final position = await _getCurrentLocation();
 
     if (position == null) {
-      Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Location not available."),
@@ -211,46 +373,64 @@ class _TodaysTasksState extends State<TodaysTasks> {
       return;
     }
 
-    final payload = {
-      "clientId": clientId,
-      "visitId": taskId,
-      "remarksByFE": remarks,
-      "markCommentLocation": {
-        "coordinates": [position.longitude, position.latitude],
-      },
-    };
+    final String markCommentLocationJson = jsonEncode({
+      "coordinates": [position.longitude, position.latitude]
+    });
 
     try {
-      final response = await http.post(
+      var request = http.MultipartRequest(
+        'POST',
         Uri.parse("$apiBaseURL/api/route-plan/mark-completed"),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(payload),
       );
 
-      Navigator.of(context).pop();
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+      });
+
+      request.fields['clientId'] = clientId;
+      request.fields['visitId'] = taskId;
+      request.fields['remarksByFE'] = remarks;
+      request.fields['markCommentLocation'] = markCommentLocationJson;
+
+      for (int i = 0; i < images.length; i++) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'completionImages',
+            images[i].path,
+          ),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext dialogContext) {
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              child: Lottie.asset(
-                'assets/Success.json',
-                repeat: false,
-                width: 180,
-                height: 180,
-              ),
-            );
-          },
-        );
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext dialogContext) {
+              return Dialog(
+                backgroundColor: Colors.transparent,
+                child: Lottie.asset(
+                  'assets/Success.json',
+                  repeat: false,
+                  width: 180,
+                  height: 180,
+                ),
+              );
+            },
+          );
+        }
 
         await Future.delayed(const Duration(seconds: 3));
-        Navigator.of(context).pop();
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
         setState(() {
           _refreshTasks();
         });
@@ -263,7 +443,9 @@ class _TodaysTasksState extends State<TodaysTasks> {
         );
       }
     } catch (e) {
-      Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error: ${e.toString()}"),
@@ -285,7 +467,10 @@ class _TodaysTasksState extends State<TodaysTasks> {
       await launchUrl(mapUri, mode: LaunchMode.externalApplication);
   }
 
-  String formatTimeRange(DateTime start, DateTime end) {
+  String formatTimeRange(DateTime start, DateTime end, bool canGoAnytime) {
+    if(canGoAnytime){
+      return "Anytime";
+    }
     final formatter = DateFormat("hh:mm a");
     final istOffset = const Duration(hours: 5, minutes: 30);
 
@@ -300,15 +485,11 @@ class _TodaysTasksState extends State<TodaysTasks> {
   Map<String, dynamic> _getPriorityInfo(int priority) {
     switch (priority) {
       case 1:
-        return {'label': 'Highest', 'color': Colors.redAccent};
+        return {'label': 'High', 'color': Colors.redAccent};
       case 2:
-        return {'label': 'High', 'color': Colors.orangeAccent};
+        return {'label': 'Normal', 'color': Colors.blueAccent};
       case 3:
-        return {'label': 'Medium', 'color': Colors.yellowAccent};
-      case 4:
         return {'label': 'Low', 'color': Colors.greenAccent};
-      case 5:
-        return {'label': 'Lowest', 'color': Colors.lightBlueAccent};
       default:
         return {'label': 'Normal', 'color': Colors.grey};
     }
@@ -316,6 +497,7 @@ class _TodaysTasksState extends State<TodaysTasks> {
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     return FutureBuilder<List<TaskModel>>(
       future: futureTasks,
       builder: (context, snapshot) {
@@ -344,8 +526,7 @@ class _TodaysTasksState extends State<TodaysTasks> {
               parent: BouncingScrollPhysics(),
             ),
             children: [
-              _buildWelcomeHeader(),
-              const SizedBox(height: 25),
+              SizedBox(height: 10.sdp),
               Row(
                 children: [
                   Text(
@@ -371,38 +552,6 @@ class _TodaysTasksState extends State<TodaysTasks> {
     );
   }
 
-  Widget _buildWelcomeHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.shade900, Colors.blue.shade700],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: RichText(
-        text: TextSpan(
-          style: AppText.light(fontSize: 18, color: Colors.white),
-          children: [
-            const TextSpan(text: 'Welcome, '),
-            TextSpan(
-              text: name,
-              style: AppText.bold(fontSize: 18, color: Colors.white),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildEmptyState() {
     return Center(
@@ -412,7 +561,7 @@ class _TodaysTasksState extends State<TodaysTasks> {
           Icon(Icons.task_alt, size: 70, color: Colors.grey[800]),
           const SizedBox(height: 20),
           Text(
-            "All Caught Up!",
+            "No Tasks Assigned!",
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -429,6 +578,8 @@ class _TodaysTasksState extends State<TodaysTasks> {
     final priorityInfo = _getPriorityInfo(task.priority);
     final Color priorityColor = priorityInfo['color'];
     final String priorityLabel = priorityInfo['label'];
+    final additionalAddressDetails =
+        _formattedAdditionalAddressDetails(task.additionalAddressDetails);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -511,13 +662,6 @@ class _TodaysTasksState extends State<TodaysTasks> {
                   color: Colors.blue.withOpacity(0.15),
                   width: 1.5,
                 ),
-                // boxShadow: [
-                //   BoxShadow(
-                //     color: Colors.blue.withOpacity(0.08),
-                //     blurRadius: 12,
-                //     offset: const Offset(0, 4),
-                //   ),
-                // ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,7 +700,6 @@ class _TodaysTasksState extends State<TodaysTasks> {
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
                       height: 1.5,
-                      //letterSpacing: 0.2,
                     ),
                   ),
                 ],
@@ -588,7 +731,7 @@ class _TodaysTasksState extends State<TodaysTasks> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        formatTimeRange(task.availabilityStart, task.availabilityEnd),
+                        formatTimeRange(task.availabilityStart, task.availabilityEnd, task.canGoAnytime),
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -670,30 +813,41 @@ class _TodaysTasksState extends State<TodaysTasks> {
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 25),
+                  if (additionalAddressDetails != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      additionalAddressDetails,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[400],
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
                   // Navigate Button
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () => launchMaps(task.locationString),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.blue[400]!, width: 1),
+                        side: const BorderSide(color: Color(0xFF1E8E6E), width: 1.5),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.navigation_rounded,
-                        color: Colors.blue[400],
-                        size: 20,
+                        color: Color(0xFF1E8E6E),
                       ),
                       label: Text(
                         "Navigate",
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: Colors.blue[400],
+                          color: const Color(0xFF1E8E6E),
                         ),
                       ),
                     ),

@@ -22,6 +22,8 @@ class ClientService {
           .map((client) => Client.fromJson(client))
           .toList();
       return clients;
+    } else if (response.statusCode == 404) {
+      return [];
     } else {
       throw Exception('Failed to fetch clients');
     }

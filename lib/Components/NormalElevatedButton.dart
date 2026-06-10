@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:route_optimization/Globals/dimensions.dart';
 
 class CustomElevatedButton extends StatelessWidget {
   final String text;
@@ -26,23 +27,24 @@ class CustomElevatedButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     return SizedBox(
-      width: width,
-      height: height,
+      width: width == double.infinity ? double.infinity : width.sdp,
+      height: height.sdp,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           shape: RoundedRectangleBorder(
             side: BorderSide(color: borderColor),
-            borderRadius: BorderRadius.circular(borderRadius),
+            borderRadius: BorderRadius.circular(borderRadius.sdp),
           ),
         ),
         child: Text(
           text,
           style: TextStyle(
             color: textColor,
-            fontSize: fontSize,
+            fontSize: fontSize.ssp,
             fontWeight: FontWeight.w700,
           ),
         ),

@@ -25,6 +25,13 @@ class LocationService {
   static const int POLLING_INTERVAL_SEC = 599;
   static const double POLLING_DISTANCE_M = 250;
 
+  static bool isActiveTrackingTime(DateTime time) {
+    final localTime = time.toLocal(); // ensure we're always in device local time
+    if (localTime.weekday == DateTime.sunday) return false;
+    final minutes = localTime.hour * 60 + localTime.minute;
+    // Active between 08:30 AM (510 minutes) and 07:00 PM (1140 minutes)
+    return minutes >= 510 && minutes <= 1140;
+  }
 
   // Request all necessary permissions
   static Future<bool> requestAllPermissions(BuildContext context) async {
@@ -225,6 +232,11 @@ class LocationService {
   // Initialize and start foreground service
   static Future<bool> initializeAndStartService() async {
     try {
+      if (await FlutterForegroundTask.isRunningService) {
+        print("[DEBUG] Foreground service is already running. Skipping start.");
+        return true;
+      }
+
       print("[DEBUG] Initializing foreground service...");
 
       FlutterForegroundTask.init(
@@ -234,6 +246,7 @@ class LocationService {
           channelDescription: 'Tracks your location for route optimization',
           channelImportance: NotificationChannelImportance.MIN,
           priority: NotificationPriority.MIN,
+          onlyAlertOnce: true,
         ),
         iosNotificationOptions: IOSNotificationOptions(
           showNotification: true,
@@ -279,6 +292,11 @@ class LocationService {
   // Send current location immediately (for widgets/manual triggers)
   static Future<void> sendCurrentLocationNow() async {
     try {
+      if (!isActiveTrackingTime(DateTime.now())) {
+        print("[DEBUG] Outside active tracking hours. Skipping manual current location fetch.");
+        return;
+      }
+
       print("[DEBUG] Getting current location...");
 
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -311,6 +329,11 @@ class LocationService {
   // Send location to server with retry mechanism
   static Future<void> sendLocationToServer(Position pos) async {
     print("[DEBUG] Sending location to server...");
+
+    if (!isActiveTrackingTime(DateTime.now())) {
+      print("[DEBUG] Outside active tracking time. Not sending location.");
+      return;
+    }
 
     // Check if we should throttle requests (don't send if last position is too close and recent)
     if (lastSentPosition != null && lastSentTime != null) {
@@ -378,12 +401,21 @@ class LocationService {
   // Start location stream (more reliable than periodic updates)
   static Future<void> startLocationStream() async {
     try {
+      if (!isActiveTrackingTime(DateTime.now())) {
+        print("[DEBUG] Outside active tracking time. Not starting location stream.");
+        return;
+      }
+
       print("[DEBUG] Starting location stream...");
 
       _locationStream?.cancel(); // Cancel existing stream
 
-      const LocationSettings locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.medium,
+      // Dynamic Accuracy: Drop to low if battery is low, otherwise medium
+      final int batteryLevel = await Battery().batteryLevel;
+      LocationAccuracy accuracy = batteryLevel < 20 ? LocationAccuracy.low : LocationAccuracy.medium;
+
+      LocationSettings locationSettings = LocationSettings(
+        accuracy: accuracy,
         distanceFilter: 250,
       );
 
@@ -404,9 +436,31 @@ class LocationService {
     }
   }
 
+  static void stopLocationStream() {
+    if (_locationStream != null) {
+      print("[DEBUG] Stopping location stream...");
+      _locationStream?.cancel();
+      _locationStream = null;
+    }
+  }
+
+  static Future<void> manageLocationStream() async {
+    final isActive = isActiveTrackingTime(DateTime.now());
+    if (isActive && _locationStream == null) {
+      await startLocationStream();
+    } else if (!isActive && _locationStream != null) {
+      stopLocationStream();
+    }
+  }
+
   // Internal helper to check and send location (used by foreground service)
   static Future<void> _checkAndSendLocation() async {
     try {
+      if (!isActiveTrackingTime(DateTime.now())) {
+        print("[DEBUG] Outside active tracking hours. Skipping background location fetch.");
+        return;
+      }
+
       print("[DEBUG] Checking location for background send...");
 
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -446,12 +500,15 @@ class LocationTaskHandler extends TaskHandler {
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     print("[DEBUG] TaskHandler onStart at $timestamp");
 
-    // Start location stream when service starts
-    await LocationService.startLocationStream();
+    // Manage location stream when service starts
+    await LocationService.manageLocationStream();
     final istTimestamp = timestamp.add(const Duration(hours: 5, minutes: 30));
+    final now = DateTime.now();
+    final bool isActive = LocationService.isActiveTrackingTime(now);
+
     FlutterForegroundTask.updateService(
-      notificationTitle: 'Location Tracking Active',
-      notificationText: 'Started tracking at ${istTimestamp.hour}:${istTimestamp.minute}',
+      notificationTitle: isActive ? 'Route Optimization Active' : 'Route Optimization Inactive',
+      notificationText: isActive ? 'Optimizing your tasks and route in background' : 'Location tracking stopped',
     );
   }
 
@@ -459,14 +516,21 @@ class LocationTaskHandler extends TaskHandler {
   Future<void> onRepeatEvent(DateTime timestamp) async {
     // Convert to IST (GMT+5:30)
     final istTimestamp = timestamp.add(const Duration(hours: 5, minutes: 30));
+    final now = DateTime.now();
+    final bool isActive = LocationService.isActiveTrackingTime(now);
 
     print("[DEBUG] onRepeatEvent fired at $istTimestamp");
 
-    // Fallback: also send location periodically in case stream fails
-    await LocationService._checkAndSendLocation();
+    // Dynamically start/stop stream based on current time
+    await LocationService.manageLocationStream();
+
+    if (isActive) {
+      // Fallback: also send location periodically in case stream fails
+      await LocationService._checkAndSendLocation();
+    }
 
     FlutterForegroundTask.updateService(
-      notificationTitle: 'Location Tracking Active',
+      notificationTitle: isActive ? 'Route Optimization Active' : 'Route Optimization Inactive',
       notificationText: 'Last Updated: ${istTimestamp.hour}:${istTimestamp.minute.toString().padLeft(2, '0')}',
     );
   }

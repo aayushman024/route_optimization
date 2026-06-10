@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:route_optimization/Globals/dimensions.dart';
 
 class GradientButton extends StatelessWidget {
   final String text;
@@ -26,24 +26,17 @@ class GradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     return Container(
       width: MediaQuery.of(context).size.width * width,
-      height: height,
+      height: height.sdp,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(30),
-        // boxShadow: [
-        //   BoxShadow(
-        //     color: gradientColors.last.withOpacity(0.3),
-        //     spreadRadius: 2,
-        //     blurRadius: 8,
-        //     offset: const Offset(0, 4),
-        //   ),
-        //],
+        borderRadius: BorderRadius.circular(30.sdp),
       ),
       child: ElevatedButton(
         onPressed: onPressed,
@@ -51,13 +44,13 @@ class GradientButton extends StatelessWidget {
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(30.sdp),
           ),
         ),
         child: Text(
           text,
           style: GoogleFonts.poppins(
-            fontSize: 18,
+            fontSize: 18.ssp,
             fontWeight: FontWeight.w600,
             color: textColor,
           ),

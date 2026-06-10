@@ -2,17 +2,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:route_optimization/Globals/fontStyle.dart';
 import 'package:route_optimization/Globals/userDetails.dart';
+import 'package:route_optimization/Globals/dimensions.dart';
 import 'package:route_optimization/Screens/completedTasksScreen.dart';
 import 'package:route_optimization/Screens/loginScreen.dart';
+import 'package:route_optimization/Services/apiGlobal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Screens/pendingTasksScreen.dart';
+import 'package:route_optimization/Services/notificationService.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Drawer(
@@ -21,23 +25,23 @@ class AppDrawer extends StatelessWidget {
         children: [
           // Profile / Header Section
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            padding: EdgeInsets.symmetric(vertical: 40.sdp, horizontal: 20.sdp),
             width: double.infinity,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: Colors.black54,
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
+                bottomLeft: Radius.circular(24.sdp),
+                bottomRight: Radius.circular(24.sdp),
               ),
             ),
             child: Column(
               children: [
                 CircleAvatar(
-                  radius: 40,
+                  radius: 40.sdp,
                   backgroundColor: Colors.grey.shade800,
-                  child: const Icon(Icons.person, size: 40, color: Colors.white),
+                  child: Icon(Icons.person, size: 40.sdp, color: Colors.white),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.sdp),
                 Text(
                   "$name",
                   style: AppText.normal(
@@ -45,7 +49,7 @@ class AppDrawer extends StatelessWidget {
                     fontSize: 18,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.sdp),
                 Text(
                   "$contactNumber",
                   style: AppText.normal(
@@ -64,33 +68,16 @@ class AppDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                // _buildDrawerItem(
-                //   icon: Icons.comment_rounded,
-                //   title: "View Comments",
-                //   onTap: () {},
-                // ),
-                // _buildDrawerItem(
-                //   icon: Icons.check_circle,
-                //   title: "Completed Tasks",
-                //   onTap: () {
-                //     Navigator.pop(context);
-                //     Navigator.push(context, CupertinoPageRoute(builder: (_)=> CompletedTasks()));
-                //   },
-                // ),
-                // _buildDrawerItem(
-                //   icon: Icons.pending_actions_rounded,
-                //   title: "Pending Tasks",
-                //   onTap: () {
-                //     Navigator.pop(context);
-                //     Navigator.push(context, CupertinoPageRoute(builder: (_)=> PendingTasksScreen()));
-                //   },
-                // ),
                 const Divider(color: Colors.white24, thickness: 0.5, indent: 16, endIndent: 16),
                 _buildDrawerItem(
                   icon: Icons.logout_rounded,
                   title: "Logout",
+                  drawerTextStyle: AppText.normal(color: Colors.white, fontSize: 16),
                   iconColor: Colors.redAccent,
                   onTap: () async {
+                    // Unsubscribe from FCM topic
+                    await NotificationService().unsubscribeFromUserTopic();
+
                     final prefs = await SharedPreferences.getInstance();
                     await prefs.remove('jwt_token');
                     Navigator.pushAndRemoveUntil(
@@ -103,6 +90,16 @@ class AppDrawer extends StatelessWidget {
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _buildDrawerItem(
+              icon: Icons.apps,
+              title: "App Version: $version",
+              drawerTextStyle: AppText.light(color: Colors.grey, fontSize: 12),
+              iconColor: Colors.green.withAlpha(40),
+              onTap: (){}
+            ),
+          ),
         ],
       ),
     );
@@ -112,16 +109,17 @@ class AppDrawer extends StatelessWidget {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    required TextStyle drawerTextStyle,
     Color iconColor = Colors.white,
   }) {
     return ListTile(
       leading: Icon(icon, color: iconColor),
       title: Text(
         title,
-        style: AppText.normal(color: Colors.white, fontSize: 16),
+        style: drawerTextStyle,
       ),
       onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sdp)),
       hoverColor: Colors.white10,
       splashColor: Colors.white24,
     );

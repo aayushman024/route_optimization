@@ -7,6 +7,8 @@ import 'package:route_optimization/Controllers/controllers.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:route_optimization/Screens/homeScreen.dart';
+import 'package:route_optimization/Services/notificationService.dart';
+import 'package:route_optimization/Globals/dimensions.dart';
 
 import '../Services/auth_api.dart';
 
@@ -157,6 +159,9 @@ class _LoginScreenState extends State<LoginScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_logged_in', true);
 
+        // Subscribe to FCM topic for lowercase username
+        await NotificationService().subscribeToUserTopic();
+
         _showSnackBar('Login successful!', Colors.green);
         Navigator.pushReplacement(
             context, CupertinoPageRoute(builder: (_) => HomeScreen()));
@@ -188,6 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -197,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
+          physics: const BouncingScrollPhysics(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -207,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 'Welcome Back!',
                 style: GoogleFonts.poppins(
-                  fontSize: 24,
+                  fontSize: 24.ssp,
                   fontWeight: FontWeight.bold,
                   color: Colors.black38,
                 ),
@@ -216,7 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 'Route Optimization Dashboard',
                 style: GoogleFonts.poppins(
-                  fontSize: 20,
+                  fontSize: 20.ssp,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
@@ -232,9 +238,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: screenHeight * 0.55,
                 decoration: BoxDecoration(
                   color: const Color(0xff2E2F2E),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(30.sdp),
+                    topRight: Radius.circular(30.sdp),
                   ),
                   boxShadow: const [
                     BoxShadow(
@@ -245,12 +251,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 20.sdp, vertical: 10.sdp),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(top: 40),
+                        padding: EdgeInsets.only(top: 40.sdp),
                         child: TextField(
                           controller: mobileNumberController,
                           maxLength: 10,
@@ -268,22 +274,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             });
                           },
                           decoration: InputDecoration(
-                            counterStyle: TextStyle(color: Colors.grey),
+                            counterStyle: const TextStyle(color: Colors.grey),
                             prefixIcon: Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 14, 0, 0),
+                              padding: EdgeInsets.fromLTRB(16.sdp, 14.sdp, 0, 0),
                               child: Text(
                                 '+91    ',
                                 style: GoogleFonts.poppins(
                                   color: Colors.black,
-                                  fontSize: 16,
+                                  fontSize: 16.ssp,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
-                            suffixIcon: Container(
-                              width: 100,
+                            suffixIcon: SizedBox(
+                              width: 100.sdp,
                               child: isLoading
-                                  ? Center(
+                                  ? const Center(
                                 child: SizedBox(
                                   width: 20,
                                   height: 20,
@@ -302,22 +308,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ? (isOtpSent ? Colors.green : Colors.blue)
                                         : Colors.grey,
                                     fontWeight: FontWeight.w600,
+                                    fontSize: 14.ssp,
                                   ),
                                 ),
                               ),
                             ),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(18.sdp),
                               borderSide: const BorderSide(color: Colors.blue, width: 1),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(18.sdp),
                               borderSide: const BorderSide(color: Colors.blue, width: 2),
                             ),
                             hintText: 'Enter Your Mobile Number',
                             hintStyle: GoogleFonts.poppins(
                               color: Colors.black26,
-                              fontSize: 14,
+                              fontSize: 14.ssp,
                               fontWeight: FontWeight.w400,
                             ),
                             fillColor: const Color(0xffF0F9FF),
@@ -329,11 +336,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       Column(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 20),
+                            padding: EdgeInsets.only(bottom: 20.sdp),
                             child: Text('Enter OTP',
                               style: GoogleFonts.poppins(
-                                  color: Color(0xffCBECFF),
-                                  fontSize: 18,
+                                  color: const Color(0xffCBECFF),
+                                  fontSize: 18.ssp,
                                   fontWeight: FontWeight.w700
                               ),),
                           ),
@@ -360,22 +367,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                             decoration: InputDecoration(
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(20.sdp),
                                   borderSide: const BorderSide(color: Colors.blue, width: 1),
                                 )
                             ),
-                            fieldWidth: 40,
-                            fieldHeight: 50,
+                            fieldWidth: 40.sdp,
+                            fieldHeight: 50.sdp,
                             borderWidth: 1,
                             enabledBorderColor: isOtpSent ? Colors.white24 : Colors.grey,
                             focusedBorderColor: Colors.white,
                             textStyle: GoogleFonts.poppins(
-                              fontSize: 30,
+                              fontSize: 30.ssp,
                               fontWeight: FontWeight.w600,
                               color: isOtpSent ? Colors.white70 : Colors.grey,
                             ),
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                            margin: EdgeInsets.symmetric(horizontal: 8.sdp),
+                            contentPadding: EdgeInsets.symmetric(vertical: 4.sdp),
                           ),
                           Align(
                             alignment: Alignment.topRight,
@@ -384,15 +391,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Text(
                                   is30secDone ? 'Resend OTP' : 'Resend OTP (${timerSeconds}s)',
                                   style: GoogleFonts.poppins(
-                                      color: (is30secDone && isOtpSent) ? Color(0xffB3E2FF) : Colors.grey,
-                                      fontWeight: FontWeight.w600
+                                      color: (is30secDone && isOtpSent) ? const Color(0xffB3E2FF) : Colors.grey,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14.ssp,
                                   ),
                                 )),
                           ),
                         ],
                       ),
                       Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40),
+                          padding: EdgeInsets.symmetric(vertical: 40.sdp),
                           child: GradientButton(
                             text: 'Continue',
                             textColor: Colors.white,

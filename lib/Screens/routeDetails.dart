@@ -6,6 +6,7 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import '../Components/AppDrawer.dart';
 import '../Globals/fontStyle.dart';
+import '../Globals/dimensions.dart';
 import '../Services/apiGlobal.dart';
 
 class RouteDetails extends StatefulWidget {
@@ -197,6 +198,7 @@ class _RouteDetailsState extends State<RouteDetails> {
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     return Scaffold(
       backgroundColor: const Color(0xffF0F8FF),
       appBar: AppBar(
@@ -204,7 +206,7 @@ class _RouteDetailsState extends State<RouteDetails> {
         backgroundColor: const Color(0xff2E2F2E),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            padding: EdgeInsets.symmetric(vertical: 10.sdp, horizontal: 15.sdp),
             child: ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(context).pop();
@@ -227,29 +229,29 @@ class _RouteDetailsState extends State<RouteDetails> {
           : SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+          padding: EdgeInsets.symmetric(vertical: 15.sdp, horizontal: 20.sdp),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Text("Route Details", style: AppText.bold(fontSize: 18)),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.sdp),
                   const Icon(Icons.route_rounded, color: Colors.black),
-                  const SizedBox(width: 15),
+                  SizedBox(width: 15.sdp),
                   Expanded(
-                    child: Container(height: 1, color: Colors.black38),
+                    child: Container(height: 1.sdp, color: Colors.black38),
                   ),
                 ],
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: 15.sdp),
 
               // Debug information
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(10.sdp),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.sdp),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,15 +259,15 @@ class _RouteDetailsState extends State<RouteDetails> {
                     Text("Debug Info:", style: AppText.bold(fontSize: 14)),
                     Text(_debugMessage, style: AppText.normal(fontSize: 12)),
                     if (_isLoadingPolyline)
-                      const Row(
+                      Row(
                         children: [
                           SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            width: 16.sdp,
+                            height: 16.sdp,
+                            child: const CircularProgressIndicator(strokeWidth: 2),
                           ),
-                          SizedBox(width: 8),
-                          Text("Loading route..."),
+                          SizedBox(width: 8.sdp),
+                          const Text("Loading route..."),
                         ],
                       ),
                     Text("Polylines count: ${_polylines.length}", style: AppText.normal(fontSize: 12)),
@@ -274,13 +276,13 @@ class _RouteDetailsState extends State<RouteDetails> {
                 ),
               ),
 
-              const SizedBox(height: 15),
+              SizedBox(height: 15.sdp),
               Row(
                 children: [
                   Text("Your Location", style: AppText.normal(fontSize: 16)),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.sdp),
                   const Icon(Icons.arrow_forward_rounded, color: Colors.black),
-                  const SizedBox(width: 15),
+                  SizedBox(width: 15.sdp),
                   Expanded(
                     child: Text(
                       "No.52, 250KM Stone, Grand Trunk Rd, Murthal, Haryana",
@@ -289,7 +291,7 @@ class _RouteDetailsState extends State<RouteDetails> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.sdp),
 
               // Add refresh button
               ElevatedButton(
@@ -297,17 +299,17 @@ class _RouteDetailsState extends State<RouteDetails> {
                 child: const Text("Refresh Route"),
               ),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20.sdp),
               Container(
-                height: 400,
+                height: 400.sdp,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
+                  borderRadius: BorderRadius.circular(25.sdp),
                   boxShadow: [
                     BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 10),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
+                  borderRadius: BorderRadius.circular(25.sdp),
                   child: GoogleMap(
                     initialCameraPosition: CameraPosition(
                       target: _userLocation!,
@@ -334,7 +336,6 @@ class _RouteDetailsState extends State<RouteDetails> {
                         markerId: const MarkerId("end"),
                         position: _destination,
                         infoWindow: const InfoWindow(title: "Destination"),
-                        //icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
                       ),
                     },
                     myLocationEnabled: true,

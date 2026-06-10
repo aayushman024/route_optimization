@@ -310,7 +310,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                       border: Border.all(color: Colors.orange.shade700),
                       borderRadius: BorderRadius.circular(15)),
                   child: Text(
-                    'Adding a comment for any task/client will mark it as "Pending".',
+                    'Adding a comment for any task/client will mark it as "On-Hold".',
                     style: AppText.bold(color: Colors.orange.shade300),
                   ),
                 ),

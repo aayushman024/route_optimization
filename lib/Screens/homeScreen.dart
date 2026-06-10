@@ -8,6 +8,7 @@ import 'package:lottie/lottie.dart' hide Marker;
 import 'package:route_optimization/Components/floatingActionButton.dart';
 import 'package:route_optimization/Components/taskSummary.dart';
 import 'package:route_optimization/Globals/fontStyle.dart';
+import 'package:route_optimization/Globals/dimensions.dart';
 import 'package:route_optimization/Services/task_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Components/AppDrawer.dart';
@@ -27,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   late HomeController _controller;
+  final GlobalKey<TodaysTasksState> _todaysTasksKey = GlobalKey<TodaysTasksState>();
 
   static const Color kScaffoldBg = Color(0xFF000000);
   static const Color kSurface = Color(0xFF0A0A0A);
@@ -64,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       _controller.checkServiceStatus();
-      _fetchTaskCount();
+      _refreshTasks();
     }
   }
 
@@ -78,12 +80,15 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _refreshTasks() async {
     print("[DEBUG] Pull-to-refresh triggered...");
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => HomeScreen(),
-      ),
-          (route) => false,
-    );
+    final refreshTasksFuture = _todaysTasksKey.currentState?.refresh();
+    final fetchTaskCountFuture = _fetchTaskCount();
+    final refreshMapFuture = _controller.refreshMapSafely();
+
+    await Future.wait([
+      if (refreshTasksFuture != null) refreshTasksFuture,
+      fetchTaskCountFuture,
+      refreshMapFuture,
+    ]);
   }
 
   int _todaysTaskCount = 0;
@@ -104,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    SizeUtil.init(context);
     final screenHeight = MediaQuery.of(context).size.height;
 
     // 1. REMOVED the full-screen loading check here.
@@ -120,32 +126,32 @@ class _HomeScreenState extends State<HomeScreen>
           // Shows only when location is loading
           if (_controller.isLocationLoading)
             Padding(
-              padding: const EdgeInsets.only(right: 8.0),
+              padding: EdgeInsets.only(right: 8.0.sdp),
               child: Lottie.asset(
                 'assets/Location.json',
-                height: 40, // Small size for AppBar
-                width: 40,
+                height: 40.sdp, // Small size for AppBar
+                width: 40.sdp,
               ),
             ),
 
           // Existing Refresh Button
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
+            padding: EdgeInsets.symmetric(vertical: 8.0.sdp, horizontal: 10.0.sdp),
             child: OutlinedButton(
               onPressed: _refreshTasks,
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.white24, width: 1),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20.sdp),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 12.sdp, vertical: 8.sdp),
                 backgroundColor: Colors.white.withAlpha(25),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.refresh_rounded, color: kTextPrimary),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.sdp),
                   Text(
                     'Refresh',
                     style: AppText.normal(
@@ -171,17 +177,17 @@ class _HomeScreenState extends State<HomeScreen>
               unselectedLabelColor: kTextSecondary,
               labelStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
-                fontSize: 16,
+                fontSize: 16.ssp,
               ),
               unselectedLabelStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.w400,
-                fontSize: 15,
+                fontSize: 15.ssp,
               ),
               tabs: [
                 Tab(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    spacing: 8,
+                    spacing: 8.sdp,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text("Tasks"),
@@ -189,13 +195,13 @@ class _HomeScreenState extends State<HomeScreen>
                       if (_todaysTaskCount > 0) ...[
                         //const SizedBox(width: 8),
                         CircleAvatar(
-                          radius: 11, // Size of the circle
+                          radius: 11.sdp, // Size of the circle
                           backgroundColor: Colors.redAccent,
                           child: Text(
                             '$_todaysTaskCount',
                             style: GoogleFonts.poppins(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: 12.ssp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -204,15 +210,15 @@ class _HomeScreenState extends State<HomeScreen>
                     ],
                   ),
                   icon: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.only(bottom: 8.sdp),
                     child: Icon(
                       Icons.task_alt_rounded,
-                      size: 20,
+                      size: 20.sdp,
                                     ),
                   ),),
-                const Tab(icon: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                  child: Icon(Icons.map_rounded, size: 20),
+                Tab(icon: Padding(
+                    padding: EdgeInsets.only(bottom: 8.sdp),
+                  child: Icon(Icons.map_rounded, size: 20.sdp),
                 ), text: 'Map View'),
               ],
             ),
@@ -224,7 +230,10 @@ class _HomeScreenState extends State<HomeScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          const TodaysTasks(),
+          TodaysTasks(
+            key: _todaysTasksKey,
+            onRefresh: _refreshTasks,
+          ),
           KeepAliveWrapper(child: MapViewTab(controller: _controller)),
         ],
       ),
