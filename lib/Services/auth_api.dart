@@ -53,12 +53,16 @@ class AuthService {
         final token = data['token'] as String;
         final feName = data['feName'] as String;
         final feContactNumber = data['contactNumber'] as String;
+        final feId = data['feId'] ?? data['_id'] ?? data['id'];
 
         // Store token in SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', token);
         await prefs.setString('feName', feName);
         await prefs.setString('contactNumber', feContactNumber);
+        if (feId != null) {
+          await prefs.setString('feId', feId.toString());
+        }
 
         return token;
       } else {

@@ -14,19 +14,19 @@ class _CompletedTasksState extends State<CompletedTasks> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff5fff6),
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
-        title: Text('Completed Tasks',
-        style: AppText.bold(
-          color: Colors.white,
-          fontSize: 18
-        ),),
+        title: Text(
+          'Completed Tasks',
+          style: AppText.bold(
+            color: Colors.white,
+            fontSize: 18,
+          ),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: const Color(0xff2E2F2E),
+        backgroundColor: const Color(0xFF121212),
       ),
-      body: SingleChildScrollView(
-        child: CompletedTasksContainer(),
-      ),
+      body: const CompletedTasksContainer(),
     );
   }
 }

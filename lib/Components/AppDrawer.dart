@@ -68,6 +68,18 @@ class AppDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
+                _buildDrawerItem(
+                  icon: Icons.assignment_turned_in_rounded,
+                  title: "Completed Tasks",
+                  drawerTextStyle: AppText.normal(color: Colors.white, fontSize: 16),
+                  iconColor: Colors.greenAccent,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(builder: (_) => const CompletedTasks()),
+                    );
+                  },
+                ),
                 const Divider(color: Colors.white24, thickness: 0.5, indent: 16, endIndent: 16),
                 _buildDrawerItem(
                   icon: Icons.logout_rounded,

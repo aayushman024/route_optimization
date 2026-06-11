@@ -3,7 +3,7 @@
 A mobile app for field executives of mNivesh
 
 Release and patch commands for shorebird for this project:
-release: shorebird build apk --no-tree-shake-icons
+release: shorebird release android-apk '--' --no-tree-shake-icons
 patch: shorebird patch android --no-tree-shake-icons
 
 

@@ -1,3 +1,33 @@
+class FEComment {
+  final String text;
+  final String byName;
+  final DateTime? createdAt;
+
+  FEComment({
+    required this.text,
+    required this.byName,
+    this.createdAt,
+  });
+
+  factory FEComment.fromJson(Map<String, dynamic> json) {
+    return FEComment(
+      text: json['text'] ?? '',
+      byName: json['byName'] ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'text': text,
+      'byName': byName,
+      'createdAt': createdAt?.toIso8601String(),
+    };
+  }
+}
+
 class TaskModel {
   final String taskId;
   final String clientId;
@@ -17,6 +47,9 @@ class TaskModel {
   final String feName;
   final String purposeOfVisit;
   final String locationString;
+  final List<FEComment> feComments;
+  final List<String> completionImages;
+  final DateTime? completedAtTime;
 
   TaskModel({
     required this.taskId,
@@ -37,19 +70,30 @@ class TaskModel {
     required this.feName,
     required this.purposeOfVisit,
     required this.locationString,
+    this.feComments = const [],
+    this.completionImages = const [],
+    this.completedAtTime,
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
-      taskId: json['visitId'] ?? '',
-      clientId: json['clientId'] ?? '',
-      clientName: json['clientName'] ?? '',
-      clientContact: json['clientContact'] ?? '',
+      taskId: json['visitId'] ?? json['_id'] ?? '',
+      clientId: json['clientId'] is Map
+          ? (json['clientId']['_id'] ?? '')
+          : (json['clientId'] ?? ''),
+      clientName: json['clientId'] is Map
+          ? (json['clientId']['name'] ?? '')
+          : (json['clientName'] ?? ''),
+      clientContact: json['clientId'] is Map
+          ? (json['clientId']['contactNumber'] ?? '')
+          : (json['clientContact'] ?? ''),
       visitingAddress: json['visitingAddress'] ?? '',
       additionalAddressDetails: json['additionalAddressDetails']?.toString(),
       availabilityStart: DateTime.parse(json['availability']['start']),
       availabilityEnd: DateTime.parse(json['availability']['end']),
-      priority: json['priority'] ?? 0,
+      priority: json['priority'] is String
+          ? (json['priority'] == 'High' ? 1 : json['priority'] == 'Low' ? 3 : 2)
+          : (json['priority'] ?? 0),
       isCompleted: json['isCompleted'] ?? false,
       onHold: json['onHold'] ?? false,
       order: json['order'] ?? 0,
@@ -59,6 +103,17 @@ class TaskModel {
       feName: json['feName'] ?? '',
       purposeOfVisit: json['purposeOfVisit'] ?? '',
       locationString: json['locationString'] ?? '',
+      feComments: (json['feComments'] as List?)
+              ?.map((e) => FEComment.fromJson(e))
+              .toList() ??
+          [],
+      completionImages: (json['completionImages'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      completedAtTime: json['completedAtTime'] != null
+          ? DateTime.tryParse(json['completedAtTime'])
+          : null,
     );
   }
 
@@ -83,6 +138,9 @@ class TaskModel {
       'feName': feName,
       'purposeOfVisit': purposeOfVisit,
       'locationString': locationString,
+      'feComments': feComments.map((e) => e.toJson()).toList(),
+      'completionImages': completionImages,
+      'completedAtTime': completedAtTime?.toIso8601String(),
     };
   }
 }

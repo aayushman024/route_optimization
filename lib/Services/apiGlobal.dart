@@ -1,5 +1,5 @@
 final GOOGLE_MAPS_API_KEY = 'AIzaSyD9Zvsc8PWOfEeMYwrt25MWiipPYePzd5E';
-final String version = "1.0.0";
+final String version = "1.1.0";
 
  const String apiBaseURL = "https://internal.mnivesh.com";
 

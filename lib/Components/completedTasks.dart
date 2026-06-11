@@ -1,16 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:android_intent_plus/android_intent.dart';
 
 import '../Models/task_model.dart';
 import '../Services/task_api.dart';
-import '../DialogBoxes/modalBottomSheet.dart';
 import '../Globals/fontStyle.dart';
 import '../Globals/dimensions.dart';
-import 'package:flutter_swipe_button/flutter_swipe_button.dart';
 
 class CompletedTasksContainer extends StatefulWidget {
   const CompletedTasksContainer({super.key});
@@ -20,20 +19,19 @@ class CompletedTasksContainer extends StatefulWidget {
 }
 
 class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
-  late Future<List<TaskModel>> futureTasks;
-
-  String? _formattedAdditionalAddressDetails(String? value) {
-    final trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return null;
-    }
-    return trimmed;
-  }
+  late Future<List<TaskModel>> futureCompletedTasks;
+  String searchQuery = "";
 
   @override
   void initState() {
     super.initState();
-    futureTasks = TaskApi.fetchTasks();
+    _refreshTasks();
+  }
+
+  void _refreshTasks() {
+    setState(() {
+      futureCompletedTasks = TaskApi.fetchCompletedTasks();
+    });
   }
 
   Future<void> launchDialer(String phoneNumber) async {
@@ -72,302 +70,689 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
     }
   }
 
-  String formatTimeRange(DateTime start, DateTime end) {
+  String formatTimeRange(DateTime start, DateTime end, bool canGoAnytime) {
+    if (canGoAnytime) {
+      return "Anytime";
+    }
     final formatter = DateFormat("hh:mm a");
-    return "${formatter.format(start)} - ${formatter.format(end)}";
+    final istOffset = const Duration(hours: 5, minutes: 30);
+    final startIst = start.toUtc().add(istOffset);
+    final endIst = end.toUtc().add(istOffset);
+    return "${formatter.format(startIst)} - ${formatter.format(endIst)}";
+  }
+
+  Map<String, dynamic> _getPriorityInfo(int priority) {
+    switch (priority) {
+      case 1:
+        return {'label': 'High', 'color': Colors.redAccent};
+      case 2:
+        return {'label': 'Normal', 'color': Colors.blueAccent};
+      case 3:
+        return {'label': 'Low', 'color': Colors.greenAccent};
+      default:
+        return {'label': 'Normal', 'color': Colors.grey};
+    }
+  }
+
+  String? _formattedAdditionalAddressDetails(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
   }
 
   @override
   Widget build(BuildContext context) {
     SizeUtil.init(context);
     return FutureBuilder<List<TaskModel>>(
-      future: futureTasks,
+      future: futureCompletedTasks,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(color: Colors.blue[400]));
         } else if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
+          return Center(
+            child: Text(
+              "Error loading completed tasks",
+              style: TextStyle(color: Colors.grey[500]),
+            ),
+          );
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(
-            child: Container(
-              margin: EdgeInsets.all(20.sdp),
-              padding: EdgeInsets.all(24.sdp),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade100, Colors.blue.shade50],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20.sdp),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blue.withOpacity(0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  )
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+          return _buildEmptyState();
+        }
+
+        final tasks = snapshot.data!;
+        final filteredTasks = tasks.where((task) {
+          if (searchQuery.isEmpty) return true;
+          final query = searchQuery.toLowerCase();
+
+          final clientName = task.clientName.toLowerCase();
+          final purpose = task.purposeOfVisit.toLowerCase();
+          final address = task.visitingAddress.toLowerCase();
+          final additionalAddress = task.additionalAddressDetails?.toLowerCase() ?? "";
+
+          final priorityInfo = _getPriorityInfo(task.priority);
+          final priorityLabel = (priorityInfo['label'] as String).toLowerCase();
+
+          final dateStr = task.completedAtTime != null
+              ? DateFormat('dd MMM yyyy dd-MM-yyyy').format(task.completedAtTime!.toLocal()).toLowerCase()
+              : "";
+
+          return clientName.contains(query) ||
+              purpose.contains(query) ||
+              address.contains(query) ||
+              additionalAddress.contains(query) ||
+              priorityLabel.contains(query) ||
+              dateStr.contains(query);
+        }).toList();
+
+        return RefreshIndicator(
+          color: Colors.blue,
+          backgroundColor: Colors.grey[900],
+          onRefresh: () async {
+            _refreshTasks();
+            await futureCompletedTasks;
+          },
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            children: [
+              SizedBox(height: 10.sdp),
+              Row(
                 children: [
-                  Icon(Icons.assignment_turned_in_outlined,
-                      size: 60.sdp, color: Colors.blue.shade600),
-                  SizedBox(height: 16.sdp),
                   Text(
-                    "No Completed Tasks",
+                    " Completed Tasks",
                     style: GoogleFonts.poppins(
-                      fontSize: 18.ssp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Divider(color: Colors.grey[800], thickness: 1.5),
                   ),
                 ],
               ),
-            ),
-          );
-        }
-
-        // Filter only completed tasks
-        final completedTasks =
-        snapshot.data!.where((task) => task.isCompleted == true).toList();
-
-        if (completedTasks.isEmpty) {
-          return Center(
-            child: Container(
-              margin: EdgeInsets.all(20.sdp),
-              padding: EdgeInsets.all(24.sdp),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade100, Colors.blue.shade50],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20.sdp),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blue.withOpacity(0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  )
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.assignment_turned_in_outlined,
-                      size: 60.sdp, color: Colors.blue.shade600),
-                  SizedBox(height: 16.sdp),
-                  Text(
-                    "You have not completed any task today yet",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18.ssp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                    textAlign: TextAlign.center,
+              const SizedBox(height: 25),
+              // Search Bar
+              TextField(
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value;
+                  });
+                },
+                style: GoogleFonts.poppins(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: "Search client name, date, purpose, priority, address...",
+                  hintStyle: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 13.ssp),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                  filled: true,
+                  fillColor: const Color(0xFF1E1E1E),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
                   ),
-                ],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Colors.blue),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
               ),
-            ),
-          );
-        }
-
-        return SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 20.sdp, horizontal: 12.sdp),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ...completedTasks.map((task) => _buildTaskItem(task)).toList(),
-              ],
-            ),
+              const SizedBox(height: 25),
+              if (filteredTasks.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Center(
+                    child: Text(
+                      "No matching completed tasks found!",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ...filteredTasks.map((task) => _buildCompletedTaskCard(task)).toList(),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildTaskItem(TaskModel task) {
-    final additionalAddressDetails =
-        _formattedAdditionalAddressDetails(task.additionalAddressDetails);
-    return Container(
-      margin: EdgeInsets.only(bottom: 24.sdp),
-      padding: EdgeInsets.all(16.sdp),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.sdp),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.assignment_turned_in_outlined, size: 70, color: Colors.grey[800]),
+          const SizedBox(height: 20),
+          Text(
+            "No Completed Tasks found!",
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ],
-        border: Border.all(color: Colors.green.shade600, width: 1.5),
+      ),
+    );
+  }
+
+  Widget _buildCompletedTaskCard(TaskModel task) {
+    final priorityInfo = _getPriorityInfo(task.priority);
+    final Color priorityColor = priorityInfo['color'];
+    final String priorityLabel = priorityInfo['label'];
+    final additionalAddressDetails = _formattedAdditionalAddressDetails(task.additionalAddressDetails);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18.sdp,
-                backgroundColor: const Color(0xff2E2F2E),
-                child: Text(
-                  task.order.toString(),
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16.ssp,
-                  ),
-                ),
-              ),
-              SizedBox(width: 16.sdp),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      task.clientName,
-                      style: GoogleFonts.poppins(
-                        fontSize: 18.ssp,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
-                      ),
-                    ),
-                    SizedBox(height: 4.sdp),
-                    Text(
-                      task.purposeOfVisit,
-                      style: GoogleFonts.poppins(
-                        fontSize: 15.ssp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 20.sdp),
-
-          // Address + Navigate
-          Container(
-            padding: EdgeInsets.all(14.sdp),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12.sdp),
-              border: Border.all(
-                color: const Color(0xff1976D2).withOpacity(0.2),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // 1. HEADER: Badge + Name
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_rounded,
-                      color: Color(0xff1976D2),
-                    ),
-                    SizedBox(width: 8.sdp),
-                    Text(
-                      "Client Address",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14.ssp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12.sdp),
-                Text(
-                  task.visitingAddress,
-                  style: GoogleFonts.poppins(
-                    fontSize: 15.ssp,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                if (additionalAddressDetails != null) ...[
-                  SizedBox(height: 8.sdp),
-                  Text(
-                    additionalAddressDetails,
+                // Order Badge
+                const SizedBox(width: 16),
+                // Client Name
+                Expanded(
+                  child: Text(
+                    task.clientName,
                     style: GoogleFonts.poppins(
-                      fontSize: 13.ssp,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black54,
-                      height: 1.35,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1.2,
                     ),
                   ),
-                ],
-                SizedBox(height: 10.sdp),
+                ),
               ],
             ),
           ),
+          const SizedBox(height: 18),
 
-          SizedBox(height: 20.sdp),
-
-          // Swipe + Call
-          Row(
-            children: [
-              Expanded(
-                flex: 1,
-                child: OutlinedButton.icon(
-                  onPressed: () => launchMaps(task.locationString),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.blue.shade600, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.sdp),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 14.sdp),
+          // 2. PURPOSE OF VISIT
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blue.shade900.withOpacity(0),
+                    const Color(0xFF2C2C2C),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.blue.withOpacity(0.15),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade700.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.assignment_outlined,
+                          color: Colors.blue.shade200,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        "Purpose of Visit",
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue.shade200,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
-                  icon: const Icon(
-                    Icons.navigation_rounded,
-                    color: Color(0xff1976D2),
-                  ),
-                  label: Text(
-                    "Navigate",
+                  const SizedBox(height: 12),
+                  Text(
+                    task.purposeOfVisit,
                     style: GoogleFonts.poppins(
-                      fontSize: 15.ssp,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xff1976D2),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      height: 1.5,
                     ),
                   ),
-                ),
+                ],
               ),
-              SizedBox(width: 16.sdp),
-              Expanded(
-                flex: 1,
-                child: OutlinedButton.icon(
-                  onPressed: () => launchDialer(task.clientContact),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.green.shade50,
-                    side:
-                    BorderSide(color: Colors.green.shade600, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.sdp),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 14.sdp),
-                  ),
-                  label: Text('Call Client',
-                  style: AppText.bold(
-                    color: const Color(0xff2E7D32)
-                  ),),
-                  icon: Icon(
-                    Icons.call_rounded,
-                    color: const Color(0xff2E7D32),
-                    size: 22.sdp,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
+          const SizedBox(height: 18),
+
+          // 3. DETAILS: Time & Priority Pills
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                // Time Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[900]!.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.access_time_filled_rounded,
+                        size: 16,
+                        color: Colors.blue[300],
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        formatTimeRange(task.availabilityStart, task.availabilityEnd, task.canGoAnytime),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[100],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Priority Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: priorityColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: priorityColor.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.flag_rounded, size: 16, color: priorityColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        priorityLabel,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: priorityColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Completed At Pill
+                if (task.completedAtTime != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.green[900]!.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 16,
+                          color: Colors.green[300],
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Completed: ${DateFormat('hh:mm a, dd MMM yyyy').format(task.completedAtTime!.toLocal())}",
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green[100],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 4. ADDRESS SECTION
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C2C2C),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        color: Colors.blue[400],
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Visiting Address",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    task.visitingAddress,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      height: 1.5,
+                    ),
+                  ),
+                  if (additionalAddressDetails != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      additionalAddressDetails,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[400],
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  // Navigate Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => launchMaps(task.locationString),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF1E8E6E), width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      icon: const Icon(
+                        Icons.navigation_rounded,
+                        color: Color(0xFF1E8E6E),
+                      ),
+                      label: Text(
+                        "Navigate",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1E8E6E),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 5. COMMENTS SECTION
+          if (task.feComments.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.comment_rounded, color: Colors.blue[300], size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        "FE Comments",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...task.feComments.map((comment) => Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2C2C2C),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          comment.text,
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 15,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "By: ${comment.byName}",
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[500],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (comment.createdAt != null)
+                              Text(
+                                DateFormat('dd MMM yyyy, hh:mm a').format(comment.createdAt!.toLocal()),
+                                style: GoogleFonts.poppins(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                ],
+              ),
+            ),
+          ],
+
+          // 6. COMPLETION IMAGES
+          if (task.completionImages.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.photo_library_rounded, color: Colors.blue[300], size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Completion Images",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 80,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: task.completionImages.length,
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullScreenImageViewer(
+                                  images: task.completionImages,
+                                  initialIndex: index,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                              image: DecorationImage(
+                                image: NetworkImage(task.completionImages[index]),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+}
+
+class FullScreenImageViewer extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const FullScreenImageViewer({
+    super.key,
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  State<FullScreenImageViewer> createState() => _FullScreenImageViewerState();
+}
+
+class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          "${_currentIndex + 1} / ${widget.images.length}",
+          style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
+        ),
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.images.length,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        itemBuilder: (context, index) {
+          return InteractiveViewer(
+            child: Center(
+              child: Image.network(
+                widget.images[index],
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator(color: Colors.blue));
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
