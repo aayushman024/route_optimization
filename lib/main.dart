@@ -1,60 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:route_optimization/Globals/customTheme.dart';
-import 'package:route_optimization/Globals/dimensions.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:route_optimization/Services/notificationService.dart';
-import 'Screens/loginScreen.dart';
-import 'Screens/homeScreen.dart';
-import 'Services/alarm_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:route_optimization/core/theme/customTheme.dart';
+import 'package:route_optimization/app/views/splash_view.dart';
 
 Future<void> main() async {
   // 1. Ensure bindings are initialized for async calls
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase and FCM
-  try {
-    await Firebase.initializeApp();
-    await NotificationService().initialize();
-  } catch (e) {
-    print('[FCM] Firebase initialization error: $e');
-  }
-
-  await AlarmService.initialize();
-
-  FlutterForegroundTask.initCommunicationPort();
-
-  // 2. Check token BEFORE running the app
-  // This keeps the native splash screen visible until the decision is made,
-  // preventing the "loading spinner" screen.
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-  final Widget initialScreen = token != null ? const HomeScreen() : const LoginScreen();
-
-  // 3. Pass the decided screen to the app
-  runApp(RouteOptimizer(initialScreen: initialScreen));
+  // 2. Wrap the app in ProviderScope for Riverpod
+  runApp(
+    const ProviderScope(
+      child: RouteOptimizer(),
+    ),
+  );
 }
 
-class RouteOptimizer extends StatelessWidget {
-  final Widget initialScreen;
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
-  // Constructor now accepts the determined screen
-  const RouteOptimizer({super.key, required this.initialScreen});
+class RouteOptimizer extends StatelessWidget {
+  const RouteOptimizer({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Route Optimizer',
       theme: customTheme,
       debugShowCheckedModeBanner: false,
-      // 4. Render the screen directly, removing FutureBuilder and loader
-      home: Builder(
-        builder: (context) {
-          SizeUtil.init(context);
-          return initialScreen;
-        },
-      ),
+      scaffoldMessengerKey: scaffoldMessengerKey,
+      // 3. Boot directly to SplashView which handles async initialization safely
+      home: const SplashView(),
     );
   }
 }

@@ -4,16 +4,13 @@ A mobile app for field executives of mNivesh
 
 Release and patch commands for shorebird for this project:
 release: shorebird release android-apk '--' --no-tree-shake-icons
-patch: shorebird patch android --no-tree-shake-icons
+patch: shorebird patch android '--' --no-tree-shake-icons
 
+Every time you deploy a Shorebird patch:
 
-## Getting Started
+Open lib/core/constants/changelogs.dart.
+Increment currentPatchNumber (e.g. from 1 to 2).
+Update the newFeatures list with your release notes.
+Run your shorebird patch android command.
+Users will instantly see the new dialog exactly once the next time they open the dashboard!
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
