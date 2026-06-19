@@ -53,6 +53,7 @@ class RemarksService {
   // Add remark API
   static Future<bool> addRemark({
     required String clientId,
+    required String visitId,
     required String comment,
     required Position position,
   }) async {
@@ -61,6 +62,7 @@ class RemarksService {
 
     final payload = {
       "clientId": clientId,
+      "visitId": visitId,
       "remarksByFE": comment,
       "markCommentLocation": {
         "coordinates": [position.longitude, position.latitude]

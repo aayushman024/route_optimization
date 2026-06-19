@@ -46,6 +46,7 @@ class TaskModel {
   final String feId;
   final String feName;
   final String purposeOfVisit;
+  final String? visitType;
   final String locationString;
   final List<FEComment> feComments;
   final List<String> completionImages;
@@ -69,6 +70,7 @@ class TaskModel {
     required this.feId,
     required this.feName,
     required this.purposeOfVisit,
+    this.visitType,
     required this.locationString,
     this.feComments = const [],
     this.completionImages = const [],
@@ -102,6 +104,7 @@ class TaskModel {
       feId: json['feId'] ?? '',
       feName: json['feName'] ?? '',
       purposeOfVisit: json['purposeOfVisit'] ?? '',
+      visitType: json['visitType']?.toString(),
       locationString: json['locationString'] ?? '',
       feComments: (json['feComments'] as List?)
               ?.map((e) => FEComment.fromJson(e))
@@ -137,6 +140,7 @@ class TaskModel {
       'feId': feId,
       'feName': feName,
       'purposeOfVisit': purposeOfVisit,
+      'visitType': visitType,
       'locationString': locationString,
       'feComments': feComments.map((e) => e.toJson()).toList(),
       'completionImages': completionImages,

@@ -81,6 +81,32 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
     return "${formatter.format(startIst)} - ${formatter.format(endIst)}";
   }
 
+  Color _getVisitTypeColor(String? type) {
+    switch (type) {
+      case 'Collection':
+        return Colors.orangeAccent;
+      case 'Handover':
+        return Colors.tealAccent;
+      case 'Exchange':
+        return Colors.purpleAccent;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  IconData _getVisitTypeIcon(String? type) {
+    switch (type) {
+      case 'Collection':
+        return Icons.download_rounded;
+      case 'Handover':
+        return Icons.upload_rounded;
+      case 'Exchange':
+        return Icons.sync_rounded;
+      default:
+        return Icons.business_center_rounded;
+    }
+  }
+
   Map<String, dynamic> _getPriorityInfo(int priority) {
     switch (priority) {
       case 1:
@@ -369,6 +395,7 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
             child: Wrap(
               spacing: 12,
               runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 // Time Pill
                 Container(
@@ -398,6 +425,35 @@ class _CompletedTasksContainerState extends State<CompletedTasksContainer> {
                     ],
                   ),
                 ),
+                // Visit Type Pill
+                if (task.visitType != null && task.visitType!.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _getVisitTypeColor(task.visitType).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _getVisitTypeColor(task.visitType).withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _getVisitTypeIcon(task.visitType),
+                          size: 16,
+                          color: _getVisitTypeColor(task.visitType),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          task.visitType!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _getVisitTypeColor(task.visitType),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 // Priority Pill
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
